@@ -35,9 +35,9 @@ int main ()
   hires_clear  = (void*)0x5018;
   scrn_clr     = (void*)0x5020;
   
-  *scrn_clr_color   = 0x10;  // upper nybble is set color, up = set
-  *scrn_clr_byte    = 0x0f;  // lower nybble is color & val?
-  *plot_color       = 2;
+  *scrn_clr_color   = 0x01;  // upper nybble is set color, up = set
+  *scrn_clr_byte    = 0x00;  // lower nybble is color & val?
+  *plot_color       = 0x50;
   
   *points_count     = 0;
   *(points_count+1) = 50;
@@ -81,6 +81,8 @@ int main ()
     //(*hires_clear)();
     //*angle_delta++;
     (*mandala_draw)();
+    *plot_color += 0x11;
+    //(*scrn_clr)();
   }
   
   return 0;

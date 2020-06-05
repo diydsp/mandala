@@ -68,7 +68,7 @@ hplotxy
         stx coord
         sty coord+1
 
-        ;jsr hcol_plot  ; fill in the color portion!
+        jsr hcol_plot  ; fill in the color portion!
 
         ;get base addr from table
         lda coord+1
@@ -121,25 +121,25 @@ tmp
 ; row starts of hires screen
 ; shifted to right by 32 bytes (32pix) to center 256 pixel image
 table1
-        byte $8020, $8160, $82a0, $83e0
-        byte $8520, $8660, $87a0, $88e0
-        byte $8A20, $8B60, $8Ca0, $8De0
-        byte $8F20, $9060, $91a0, $92e0
-        byte $9420, $9560, $96a0, $97e0
-        byte $9920, $9A60, $9Ba0, $9Ce0
-        byte $9e20
+        byte $e020, $e160, $e2a0, $e3e0
+        byte $e520, $e660, $e7a0, $e8e0
+        byte $eA20, $eB60, $eCa0, $eDe0
+        byte $eF20, $f060, $f1a0, $f2e0
+        byte $f420, $f560, $f6a0, $f7e0
+        byte $f920, $fA60, $fBa0, $fCe0
+        byte $fe20
 table2
         byte $80, $40, $20, $10, $08, $04, $02, $01
 
 ; text screen for color memory in bitmap mode
 tab_scr        
-        byte $a404, $a42c, $a454, $a47c
-        byte $a4A4, $a4Cc, $a4F4, $a51c
-        byte $a544, $a56c, $a594, $a5Bc
-        byte $a5E4, $a60c, $a634, $a65c
-        byte $a684, $a6Ac, $a6D4, $a6Fc
-        byte $a724, $a74c, $a774, $a79c
-        byte $a79c
+        byte $cc04, $cc2c, $cc54, $cc7c
+        byte $ccA4, $ccCc, $ccF4, $cd1c
+        byte $cd44, $cd6c, $cd94, $cdBc
+        byte $cdE4, $ce0c, $ce34, $ce5c
+        byte $ce84, $ceAc, $ceD4, $ceFc
+        byte $cf24, $cf4c, $cf74, $cf9c
+        byte $cf9c
 
 ;     byte $414, $43c, $464, $48c
 ;       byte $4b4, $4dc, $504, $52c
@@ -151,25 +151,18 @@ tab_scr
 
 hires_start
 
-        ; bank out the BASIC ROM, so hires screen can start at $a000
-        lda $01
-        and #$fe   ;we turn off the BASIC here
-        
-        sta $01    ;the cpu now sees RAM everywhere except at $d000-$dfff, where still the registers of
-                   ;SID/VICII/etc are visible
-                  ; and e000-ffff where the kernal is visible
 
-        ; set the vic base address to $8000
+        ; set the vic base address to $c000
         lda $dd00
         and #$fc
-        ora #$01    ; page 2 = $8000
+        ora #$00   ; page 0= $c000
         sta $dd00
 
         ; set the VM13 bit in $d018, (53272) memory points
-        ; bitmap at $a000
-        ; screenmem (for colors) at $ac00
+        ; bitmap at $e000
+        ; screenmem (for colors) at $cc00
         lda $d018
-        lda #$90
+        lda #$38
         sta $d018
         
 
@@ -178,10 +171,12 @@ hires_start
         ora #$20
         sta 53265
 
-        ; set character set (this is prob unnecessary)
-        ;llda 53272   ; $d018
-        ;ora #$08
-        ;sta 53272
+        ; bank out the BASIC ROM, so hires screen can start at $a000
+        lda $01
+        and #$f8   ;we turn off BASIC, char rom and kernal
+        
+        sta $01    ;the cpu now sees RAM everywhere except at $d000-$dfff, where still the registers of
+                   ;SID/VICII/etc are visible
 
         rts
 
@@ -189,13 +184,14 @@ hires_start
 
 ; fill text screen with scrn_clr_color
 scrn_clr
-        ldx #$00
+        ldx #$e0
+        ldx #$e7
         lda scrn_clr_color
 scrn_clr_loo
-        sta $0400,x
-        sta $0500,x
-        sta $0600,x
-        sta $0700,x
+        sta $cc00,x
+        sta $cd00,x
+        sta $ce00,x
+        sta $cf00,x
         dex
         bne scrn_clr_loo
         rts
@@ -207,38 +203,38 @@ hires_clear
         lda scrn_clr_byte
 
 hires_clear_lp
-        sta $8000,x
-        sta $8100,x
-        sta $8200,x
-        sta $8300,x
-        sta $8400,x
-        sta $8500,x
-        sta $8600,x
-        sta $8700,x
-        sta $8800,x
-        sta $8900,x
-        sta $8a00,x
-        sta $8b00,x
-        sta $8c00,x
-        sta $8d00,x
-        sta $8e00,x
-        sta $8f00,x
-        sta $9000,x
-        sta $9100,x
-        sta $9200,x
-        sta $9300,x
-        sta $9400,x
-        sta $9500,x
-        sta $9600,x
-        sta $9700,x
-        sta $9800,x
-        sta $9900,x
-        sta $9a00,x
-        sta $9b00,x
-        sta $9c00,x
-        sta $9d00,x
-        sta $9e00,x
-        sta $9f00,x
+        sta $e000,x
+        sta $e100,x
+        sta $e200,x
+        sta $e300,x
+        sta $e400,x
+        sta $e500,x
+        sta $e600,x
+        sta $e700,x
+        sta $e800,x
+        sta $e900,x
+        sta $ea00,x
+        sta $eb00,x
+        sta $ec00,x
+        sta $ed00,x
+        sta $ee00,x
+        sta $ef00,x
+        sta $f000,x
+        sta $f100,x
+        sta $f200,x
+        sta $f300,x
+        sta $f400,x
+        sta $f500,x
+        sta $f600,x
+        sta $f700,x
+        sta $f800,x
+        sta $f900,x
+        sta $fa00,x
+        sta $fb00,x
+        sta $fc00,x
+        sta $fd00,x
+        sta $fe00,x
+        sta $ff00,x
         dex
         bne hires_clear_lp
         
