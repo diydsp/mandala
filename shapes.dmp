@@ -1,0 +1,153 @@
+00001  0000             *=$5600
+00002  5600             
+00003  5600             
+00004  5600             ; S+14 = $590E
+00005  5600             ; S+15 = $590F
+00006  5600             ; S+18 = $5912
+00007  5600             ; S+19 = $5913
+00008  5600             
+00009  5600             ANG_DELT   = $590E
+00010  5600             ANG_DELT_L = $590F
+00011  5600             RAD_DELT   = $5912
+00012  5600             RAD_DELT_L = $5913
+00013  5600             
+00014  5600             MANDALA_DRAW = $5920
+00015  5600             
+00016  5600             SHAPE_SQUARE 
+00017  5600  20 6C 56              JSR SHAPE_OUT
+00018  5603  20 20 59              JSR MANDALA_DRAW
+00019  5606  20 78 56              JSR SHAPE_CW
+00020  5609  20 20 59              JSR MANDALA_DRAW
+00021  560C  20 84 56              JSR SHAPE_IN
+00022  560F  20 20 59              JSR MANDALA_DRAW
+00023  5612  20 90 56              JSR SHAPE_CCW
+00024  5615  20 20 59              JSR MANDALA_DRAW
+00025  5618  60                    RTS
+00026  5619                        
+00027  5619             SHAPE_DIAMOND 
+00028  5619  20 6C 56              JSR SHAPE_OUT
+00029  561C  20 20 59              JSR MANDALA_DRAW
+00030  561F  20 78 56              JSR SHAPE_CW
+00031  5622  20 20 59              JSR MANDALA_DRAW
+00032  5625  20 84 56              JSR SHAPE_IN
+00033  5628  20 20 59              JSR MANDALA_DRAW
+00034  562B  20 90 56              JSR SHAPE_CCW
+00035  562E  20 20 59              JSR MANDALA_DRAW
+00036  5631  60                    RTS
+00037  5632             
+00038  5632             
+00039  5632             ; ANG_DELT, ANG_DELT_LOW, RADIUS_DELT, RADIUS_DELT_LOW
+00040  5632             MOUSE_OUTWARDS 
+00041  5632  00 00 01              BYTE 0,0,1,0
+00042  5636             MOUSE_CLOCKWISE 
+00043  5636  01 00 00              BYTE 1,0,0,0
+00044  563A             MOUSE_INWARDS 
+00045  563A  00 00 FF              BYTE 0,0,$FF,0
+00046  563E             MOUSE_COUNTERCLOCKWISE 
+00047  563E  FF 00 00              BYTE $FF,0,0,0
+00048  5642             
+00049  5642             ; DIAMOND
+00050  5642             MOUSE_45
+00051  5642  01 00 01              BYTE 1,0,1,0
+00052  5646             MOUSE_135
+00053  5646  FF 00 01              BYTE $FF,0,1,0
+00054  564A             MOUSE_225
+00055  564A  FF 00 FF              BYTE $FF,0,$FF,0
+00056  564E             MOUSE_315
+00057  564E  01 00 FF              BYTE 1,0,$FF,0
+00058  5652             
+00059  5652             ; USES THESE TWO ZERO-PAGES, $FC-$FD, COULD INTERFERE WITH MULTIPLY ROUTINE!
+00060  5652             PTR_SHAPE  = $FC  ;RESULT LO
+00061  5652             SHAPE_CONFIG 
+00062  5652  A0 00                 LDY #$00
+00063  5654  B1 FC                 LDA ($FC),Y
+00064  5656  8D 0E 59              STA ANG_DELT
+00065  5659  C8                    INY
+00066  565A  B1 FC                 LDA ($FC),Y
+00067  565C  8D 0F 59              STA ANG_DELT_L
+00068  565F  C8                    INY
+00069  5660  B1 FC                 LDA ($FC),Y
+00070  5662  8D 12 59              STA RAD_DELT
+00071  5665  C8                    INY
+00072  5666  B1 FC                 LDA ($FC),Y
+00073  5668  8D 13 59              STA RAD_DELT_L
+00074  566B  60                    RTS
+00075  566C             
+00076  566C             SHAPE_OUT
+00077  566C  A9 32                 LDA #<MOUSE_OUTWARDS
+00078  566E  85 FC                 STA $FC
+00079  5670  A9 56                 LDA #>MOUSE_OUTWARDS
+00080  5672  85 FD                 STA $FD
+00081  5674  20 52 56              JSR SHAPE_CONFIG
+00082  5677  60                    RTS
+00083  5678             
+00084  5678             SHAPE_CW
+00085  5678  A9 36                 LDA #<MOUSE_CLOCKWISE
+00086  567A  85 FC                 STA $FC
+00087  567C  A9 56                 LDA #>MOUSE_CLOCKWISE
+00088  567E  85 FD                 STA $FD
+00089  5680  20 52 56              JSR SHAPE_CONFIG
+00090  5683  60                    RTS
+00091  5684             
+00092  5684             SHAPE_IN
+00093  5684  A9 3A                 LDA #<MOUSE_INWARDS
+00094  5686  85 FC                 STA $FC
+00095  5688  A9 56                 LDA #>MOUSE_INWARDS
+00096  568A  85 FD                 STA $FD
+00097  568C  20 52 56              JSR SHAPE_CONFIG
+00098  568F  60                    RTS
+00099  5690             
+00100  5690             SHAPE_CCW
+00101  5690  A9 3E                 LDA #<MOUSE_COUNTERCLOCKWISE
+00102  5692  85 FC                 STA $FC
+00103  5694  A9 56                 LDA #>MOUSE_COUNTERCLOCKWISE
+00104  5696  85 FD                 STA $FD
+00105  5698  20 52 56              JSR SHAPE_CONFIG
+00106  569B  60                    RTS
+00107  569C             
+00108  569C             
+00109  569C             
+00110  569C             SHAPE_LIST 
+00111  569C  3E 56                 BYTE <MOUSE_COUNTERCLOCKWISE, >MOUSE_COUNTERCLOCKWISE
+00112  569E             
+00113  569E             
+
+******* 16 Label(s) *******
+mouse_135 = $5646 
+mouse_225 = $564A 
+mouse_315 = $564E 
+mouse_45 = $5642 
+mouse_clockwise = $5636 
+mouse_counterclockwise = $563E 
+mouse_inwards = $563A 
+mouse_outwards = $5632 
+shape_ccw = $5690 
+shape_config = $5652 
+shape_cw = $5678 
+shape_diamond = $5619 
+shape_in = $5684 
+shape_list = $569C 
+shape_out = $566C 
+shape_square = $5600 
+
+******* 7 Unused label(s) *******
+mouse_135
+mouse_225
+mouse_315
+mouse_45
+shape_diamond
+shape_list
+shape_square
+
+******* 7 Variable(s) *******
+ANG_DELT  = $590E
+ANG_DELT_L  = $590F
+MANDALA_DRAW  = $5920
+PTR_SHAPE  = $00FC
+RAD_DELT  = $5912
+RAD_DELT_L  = $5913
+tgt_c64  = $0001
+******* 2 Unused variables(s) *******
+PTR_SHAPE
+tgt_c64
+

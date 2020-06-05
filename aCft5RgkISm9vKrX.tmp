@@ -1,0 +1,1728 @@
+##{0:0:0:hires.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\hires.asm
+
+
+
+
+*=$5000
+
+into_hires
+        jsr hires_start
+        rts
+*=$5008
+        lda scrn_clr_color
+        jsr scrn_clr
+        rts
+
+*=$5010
+init_things
+        jsr multiply_init
+        rts
+
+*=$5018
+        jsr hires_clear
+        rts
+
+*=$5020
+        jsr scrn_clr
+        rts
+
+
+*=$5a00   ; 0x104 bytes long
+
+hires_end
+        lda 53265
+        and #$df
+        sta 53265
+
+        lda 53272
+        and #$f7
+        sta 53272
+
+        rts
+
+; color in color memory aka screen mem for hires
+hcol_plot
+        ; get base addr from table
+        lda coord+1 ;y coord turns into row
+        lsr
+        lsr  ; only two shifts because table is two byte addrs
+        and #$fe
+        tay
+        lda tab_scr,y
+        sta write_col+1
+        lda tab_scr+1,y
+        sta write_col+2
+        
+        lda coord; x coord
+        lsr
+        lsr
+        lsr
+        tax
+
+        lda plot_color
+write_col
+        sta $ffff,x
+        rts
+
+; hires drawing routine!
+
+hplotxy
+        stx coord
+        sty coord+1
+
+        ;jsr hcol_plot  ; fill in the color portion!
+
+        ;get base addr from table
+        lda coord+1
+        lsr
+        lsr
+        and #$3e
+        tay
+        lda table1,y
+        sta read_pix+1
+        sta write_pix+1
+        lda table1+1,y
+        sta read_pix+2
+        sta write_pix+2
+
+        ; generate offset
+        lda coord+1
+        and #$07
+        sta tmp
+        lda coord
+        and #$f8
+        ora tmp
+        tax
+
+        ; generate bitmsk
+        lda coord
+        and #$07
+        tay
+
+        ; perform screen update
+read_pix
+        lda $a0a0,x
+        ora table2,y
+write_pix
+        sta $a0a0,x
+        
+        rts
+
+coord
+        byte 96, 50
+
+tmp
+        byte 0
+
+
+; start address of the 25 rows
+
+; shifted right by 32 + 128 = 160 pixels to mid-screen
+; for use with signed 7-bit numbers
+
+; row starts of hires screen
+; shifted to right by 32 bytes (32pix) to center 256 pixel image
+table1
+        byte $8020, $8160, $82a0, $83e0
+        byte $8520, $8660, $87a0, $88e0
+        byte $8A20, $8B60, $8Ca0, $8De0
+        byte $8F20, $9060, $91a0, $92e0
+        byte $9420, $9560, $96a0, $97e0
+        byte $9920, $9A60, $9Ba0, $9Ce0
+        byte $9e20
+table2
+        byte $80, $40, $20, $10, $08, $04, $02, $01
+
+; text screen for color memory in bitmap mode
+tab_scr        
+        byte $a404, $a42c, $a454, $a47c
+        byte $a4A4, $a4Cc, $a4F4, $a51c
+        byte $a544, $a56c, $a594, $a5Bc
+        byte $a5E4, $a60c, $a634, $a65c
+        byte $a684, $a6Ac, $a6D4, $a6Fc
+        byte $a724, $a74c, $a774, $a79c
+        byte $a79c
+
+;     byte $414, $43c, $464, $48c
+;       byte $4b4, $4dc, $504, $52c
+;       byte $554, $57c, $5a4, $5cc
+;       byte $5f4, $61c, $644, $66c
+;       byte $694, $6bc, $6e4, $70c
+;       byte $734, $75c, $784, $7ac
+;       byte $7d4
+
+hires_start
+
+        ; bank out the BASIC ROM, so hires screen can start at $a000
+        lda $01
+        and #$fe   ;we turn off the BASIC here
+        sta $01    ;the cpu now sees RAM everywhere except at $d000-$dfff, where still the registers of
+                   ;SID/VICII/etc are visible
+                  ; and e000-ffff where the kernal is visible
+
+        ; set the vic base address to $8000
+        lda $dd00
+        and #$fc
+        ora #$01    ; page 2 = $8000
+        sta $dd00
+
+        ; set the VM13 bit in $d018, (53272) memory points
+        ; bitmap at $a000
+        ; screenmem (for colors) at $9c00
+        lda $d018
+        lda #$90
+        sta $d018
+        
+
+       ; switch to hires mode
+        lda 53265   ; $d011
+        ora #$20
+        sta 53265
+
+        ; set character set (this is prob unnecessary)
+        lda 53272   ; $d018
+        ora #$08
+        sta 53272
+
+        rts
+
+
+
+; fill text screen with scrn_clr_color
+scrn_clr
+        ldx #$00
+        lda scrn_clr_color
+scrn_clr_loo
+        sta $0400,x
+        sta $0500,x
+        sta $0600,x
+        sta $0700,x
+        dex
+        bne scrn_clr_loo
+        rts
+
+; fill hires screen with scrn_clr_color
+hires_clear
+        ; clear screen
+        ldx #$00
+        lda scrn_clr_byte
+
+hires_clear_lp
+        sta $8000,x
+        sta $8100,x
+        sta $8200,x
+        sta $8300,x
+        sta $8400,x
+        sta $8500,x
+        sta $8600,x
+        sta $8700,x
+        sta $8800,x
+        sta $8900,x
+        sta $8a00,x
+        sta $8b00,x
+        sta $8c00,x
+        sta $8d00,x
+        sta $8e00,x
+        sta $8f00,x
+        sta $9000,x
+        sta $9100,x
+        sta $9200,x
+        sta $9300,x
+        sta $9400,x
+        sta $9500,x
+        sta $9600,x
+        sta $9700,x
+        sta $9800,x
+        sta $9900,x
+        sta $9a00,x
+        sta $9b00,x
+        sta $9c00,x
+        sta $9d00,x
+        sta $9e00,x
+        sta $9f00,x
+        dex
+        bne hires_clear_lp
+        
+        rts
+
+
+; use raster value to slowly erase screen?!?!
+erasing_01
+        ldx $d012
+        stx erase_me+1
+
+        lda #$00
+erase_me
+        sta $a000,x
+        sta $a100,x
+        sta $a200,x
+        sta $a300,x
+        sta $a400,x
+        sta $a500,x
+        sta $a600,x
+        sta $a700,x
+        sta $a800,x
+        sta $a900,x
+        sta $aa00,x
+        sta $ab00,x
+        sta $ac00,x
+        sta $ad00,x
+        sta $ae00,x
+        sta $af00,x
+        sta $b000,x
+        sta $b100,x
+        sta $b200,x
+        sta $b300,x
+        sta $b400,x
+        sta $b500,x
+        sta $b600,x
+        sta $b700,x
+        sta $b800,x
+        sta $b900,x
+        sta $ba00,x
+        sta $bb00,x
+        sta $bc00,x
+        sta $bd00,x
+        sta $be00,x
+        sta $bf00,x
+
+        rts
+
+
+##{0:0:0:scroller.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\scroller.asm
+
+ *=$5100
+
+        
+ 
+
+scroller_init
+
+        lda #<scroll_text
+        sta scrl_read_byte+1
+        lda #>scroll_text
+        sta scrl_read_byte+2
+
+        rts
+
+
+
+scrl_update
+
+        ; shift chars
+        jsr scrl_shift
+
+        ; draw column
+        jsr scrl_rend_colm
+
+        rts
+
+scrl_colm
+        byte 1   ; (reverse) column rendering, 7-0
+scrl_char_idx
+        byte 0   ; which PETSCI char rendering, 0-255
+scrl_char
+        byte 0,0,0,0, 0,0,0,0  ; entire character
+
+
+
+
+scrl_clr_pix = $20
+scrl_set_pix = 160
+
+scrl_pix_set
+        byte $51
+scrl_pix_clr
+        byte $20
+
+scrl_rend_colm
+
+        lda scrl_colm
+        cmp #$03
+        bne one_col_at_time
+        ;jsr snd_ungate
+
+one_col_at_time
+        ; one column at a time
+        ldx scrl_colm
+        dex
+        stx scrl_colm
+        beq fetch_new_char
+scrl_char_ok
+
+        ; move through 8 rows
+        ;ldy #scrl_clr_pix        ; char drawn for clear pixel
+        ldy scrl_pix_clr
+        rol scrl_char
+        bcc scrl_bit_clr0
+        ;ldy #scrl_set_pix        ; char drawn for set pixel
+        ldy scrl_pix_set
+scrl_bit_clr0
+        sty $06cf     ; 1024 + 40 * 17 + 39
+
+        ;ldy #scrl_clr_pix        ; char drawn for clear pixel
+        ldy scrl_pix_clr
+        rol scrl_char+1
+        bcc scrl_bit_clr1
+        ;ldy #scrl_set_pix        ; char drawn for set pixel
+        ldy scrl_pix_set
+scrl_bit_clr1
+        sty $06f7    ; 1024 + 40 * 17 + 39
+
+        ;ldy #scrl_clr_pix        ; char drawn for clear pixel
+        ldy scrl_pix_clr
+        rol scrl_char+2
+        bcc scrl_bit_clr2
+        ;ldy #scrl_set_pix        ; char drawn for set pixel
+        ldy scrl_pix_set
+scrl_bit_clr2
+        sty $071f    ; 1024 + 40 * 17 + 39
+
+        ;ldy #scrl_clr_pix        ; char drawn for clear pixel
+        ldy scrl_pix_clr
+        rol scrl_char+3
+        bcc scrl_bit_clr3
+        ;ldy #scrl_set_pix        ; char drawn for set pixel
+        ldy scrl_pix_set
+scrl_bit_clr3
+        sty $0747    ; 1024 + 40 * 17 + 39
+
+        ;ldy #scrl_clr_pix        ; char drawn for clear pixel
+        ldy scrl_pix_clr
+        rol scrl_char+4
+        bcc scrl_bit_clr4
+        ;ldy #scrl_set_pix        ; char drawn for set pixel
+        ldy scrl_pix_set
+scrl_bit_clr4
+        sty $076f    ; 1024 + 40 * 17 + 39
+
+        ;ldy #scrl_clr_pix        ; char drawn for clear pixel
+        ldy scrl_pix_clr
+        rol scrl_char+5
+        bcc scrl_bit_clr5
+        ;ldy #scrl_set_pix        ; char drawn for set pixel
+        ldy scrl_pix_set
+scrl_bit_clr5
+        sty $0797    ; 1024 + 40 * 17 + 39
+
+        ;ldy #scrl_clr_pix        ; char drawn for clear pixel
+        ldy scrl_pix_clr
+        rol scrl_char+6
+        bcc scrl_bit_clr6
+        ;ldy #scrl_set_pix        ; char drawn for set pixel
+        ldy scrl_pix_set
+scrl_bit_clr6
+        sty $07bf    ; 1024 + 40 * 17 + 39
+
+        ;ldy #scrl_clr_pix        ; char drawn for clear pixel
+        ldy scrl_pix_clr
+        rol scrl_char+7
+        bcc scrl_bit_clr7
+        ;ldy #scrl_set_pix        ; char drawn for set pixel
+        ldy scrl_pix_set
+scrl_bit_clr7
+        sty $07e7    ; 1024 + 40 * 17 + 39
+
+        rts
+        
+
+char_rom_addr
+        byte 0,0
+
+char_temp_char
+        byte 0
+
+; fetch new char, writes char to scrl_char
+fetch_new_char
+        jsr please_scrl_read_byte ; returns in acc
+        bne nrml_print_char
+        jmp scrl_ctrl_found
+
+        ; otherwise normal printed character
+        ; render alphabet idx into 8-byte char data via Char ROM 
+nrml_print_char
+
+        sta char_temp_char
+        ;jsr sound_tone
+        lda char_temp_char
+
+        sta scrl_char_idx
+
+        ; using idx, get the 8-byte character data
+        sta char_rom_addr      ; low_byte
+        ldx #$00
+        stx char_rom_addr+1    ; high byte
+
+        ; multiply byte 8
+        clc
+        rol char_rom_addr
+        rol char_rom_addr+1
+        clc
+        rol char_rom_addr
+        rol char_rom_addr+1
+        clc
+        rol char_rom_addr
+        rol char_rom_addr+1
+
+        ; add base addr $d000 (char rom addr)
+        lda #$00
+        clc
+        adc char_rom_addr
+        sta char_rom_addr
+        lda #$d0
+        adc char_rom_addr+1
+        sta char_rom_addr+1
+
+        ; modify read instruction
+        lda char_rom_addr  ; low byte
+        sta char_rom_read+1
+        lda char_rom_addr+1 ; high byte
+        sta char_rom_read+2
+
+        ; fetch 8 bytes of char data
+        lda #$33   ; point to char rom at $d000
+        sta $01
+        ;sei        ; disable ints during copying
+
+        ldx #$08
+scrl_char_fetch_byte
+        dex
+char_rom_read
+        lda char_rom_addr,x
+        sta scrl_char,x
+        txa    ; update flags
+        beq scrl_char_fetch_done
+        jmp scrl_char_fetch_byte
+scrl_char_fetch_done
+
+        ;cli        ; restore ints after copying
+        lda #$35   ; point to mem at $d000
+        sta $01
+
+        lda #$08          ; reload column idx
+        sta scrl_colm
+
+        jsr incr_scrl_pos
+
+        jmp scrl_char_ok
+
+; read current byte of scroll text
+please_scrl_read_byte   
+scrl_read_byte
+        lda scroll_text  ; gets modified in-place
+        rts
+
+; increment position in scroll text
+incr_scrl_pos
+        clc
+        lda scrl_read_byte+1   ; lo byte
+        adc #$01
+        sta scrl_read_byte+1
+        lda scrl_read_byte+2
+        adc #$00
+        sta scrl_read_byte+2
+        rts
+
+; temp storage for calling subroutine
+reg_tmp
+        byte 0, 0, 0; acc,x,y
+
+scrl_ctrl_found
+
+        ; lo-byte target address
+        jsr incr_scrl_pos
+        jsr please_scrl_read_byte
+        sta scrl_seq_call+1  ; lo-byte
+       
+        ; hi-byte target address
+        jsr incr_scrl_pos
+        jsr please_scrl_read_byte
+        sta scrl_seq_call+2  ; lo-byte
+
+        ; accumulator value
+        jsr incr_scrl_pos
+        jsr please_scrl_read_byte
+        sta reg_tmp
+
+        ; x register value
+        jsr incr_scrl_pos
+        jsr please_scrl_read_byte
+        sta reg_tmp+1
+
+        ; y register value
+        jsr incr_scrl_pos
+        jsr please_scrl_read_byte
+        sta reg_tmp+2
+
+        lda scrl_seq_call+1   ; development verification
+        ldx scrl_seq_call+2
+        lda reg_tmp           ; recall three regs
+        ldx reg_tmp+1
+        ldy reg_tmp+2
+
+        ; uncomment to make actual subroutine jsr call, modified by above
+        jsr please_scrl_seq_call
+
+        ; point to next byte in sequence
+        jsr incr_scrl_pos
+        
+        ; keep looking for more chars (could drop of too much CPU)
+        jmp fetch_new_char
+
+please_scrl_seq_call
+scrl_seq_call
+        jsr scrl_seq_call        ; gets modified by above code
+        rts
+
+                
+
+
+scrl_shift
+        ldy #39
+        ldx #$00
+scrl_shift_loop
+        lda $6a9,x
+        sta $6a8,x
+        lda $6d1,x
+        sta $6d0,x
+        lda $6f9,x
+        sta $6f8,x
+        lda $721,x
+        sta $720,x
+        lda $749,x
+        sta $748,x
+        lda $771,x
+        sta $770,x
+        lda $799,x
+        sta $798,x
+        lda $7c1,x
+        sta $7c0,x
+        inx
+        dey
+        bne scrl_shift_loop
+
+        rts
+
+
+
+set_bg_fg_col
+        sta $d020
+        stx $d021
+        rts
+
+reset_scroll_text
+        lda #<scroll_text
+        sta scrl_read_byte+1
+        lda #>scroll_text
+        sta scrl_read_byte+2
+        rts
+
+
+color_row_start_lows
+        byte $a8,$d0,$f8,$20, $48,$70,$98,$c0
+color_row_start_his
+        byte $da,$da,$da,$db, $db,$db,$db,$db 
+color_mem_hline_col
+        byte 0
+
+; a = color
+; x = row number
+; y = countdown
+color_mem_hline        
+
+        ; save val
+        sta color_mem_hline_col
+        
+        ; modify address
+        lda color_row_start_lows,x
+        sta color_byte_write+1
+        lda color_row_start_his,x
+        sta color_byte_write+2
+
+        ; loop through whole row
+        ;ldx #40
+cbyte_next
+        dey
+        lda color_mem_hline_col
+color_byte_write
+        sta $d800,y
+        tya
+        bne cbyte_next
+        rts
+
+
+
+
+clr_screen
+        ldx #$fa     ;   250 x4 -> 1000 chars on screen    
+
+clear01
+        sta $0400,x     ; 400 default screen memory
+        sta $04fa,x
+        sta $05f4,x
+        sta $06ee,x
+
+        dex
+        bne clear01
+        rts
+
+
+set_plot_chars
+        sta scrl_pix_set
+        stx scrl_pix_clr
+        rts
+
+set_snd_root
+        ;sta snd_root
+        rts
+
+set_snd_chord
+        ;sta snd_chord+1
+        ;stx snd_chord+2
+        ;sty snd_chord+3
+        rts
+
+
+scroll_text
+        byte '   '
+        ;byte '-     -    -   -  - -- -  -   -    -  '
+        ;byte 0, <color_mem_hline, >color_mem_hline, 14, 0, 40
+        ;byte 0, <color_mem_hline, >color_mem_hline, 14, 1, 40
+        ;byte 0, <color_mem_hline, >color_mem_hline, 14, 2, 40
+        ;byte 0, <color_mem_hline, >color_mem_hline, 14, 3, 40
+        ;byte 0, <color_mem_hline, >color_mem_hline, 14, 4, 40
+        ;byte 0, <color_mem_hline, >color_mem_hline, 14, 5, 40
+        ;byte 0, <color_mem_hline, >color_mem_hline, 14, 6, 40
+        ;byte 0, <color_mem_hline, >color_mem_hline, 14, 7, 40
+        ;byte 0, <set_plot_chars, >set_plot_chars, 160, 32, 0
+        ;byte 0, <set_snd_root,   >set_snd_root, 7, 0, 0
+        ;byte 0, <set_snd_chord,  >set_snd_chord, 4, 7, 10
+        byte '    hello     '
+
+        byte 0, <clr_screen, >clr_screen, $20, 0, 0
+        byte 'b y e !                            '
+
+        byte 0, <reset_scroll_text, >reset_scroll_text, 0,0,0
+        
+
+
+##{0:0:0:scrl_seq.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\scrl_seq.asm
+
+*=$5400
+
+scrl_seq_base_init
+; scroll seq parameters
+        lda #$01
+        ldx #$01
+        ldy #$01
+        jsr scrl_seq_init$
+        rts
+                        
+; these are the functions that get called by the timer
+scrl_seq_down_slope
+        ;inc $0410
+        rts
+
+scrl_seq_up_slope
+        ;inc $0411
+        jsr scrl_update
+        rts
+
+scrl_seq_init$
+
+        sta scrl_seq_low
+        stx scrl_seq_high
+        sty scrl_seq_ctr
+        
+        ; initial call vector
+        lda #<scrl_seq_down
+        ldx #>scrl_seq_down
+        jmp scrl_seq_addr_write
+
+        rts
+
+
+scrl_seq_addr_write
+        sta scrl_seq_addr$+1
+        stx scrl_seq_addr$+2
+        ;lda #<scrl_seq_up
+        ;sta stimulus_seq_addr+1
+        ;lda #>scrl_seq_up
+        ;sta stimulus_seq_addr+2
+
+        rts
+scrl_reinit
+        ; re-load
+        lda scrl_seq_high
+        sta scrl_seq_ctr
+        
+        ; action
+        jsr scrl_seq_down_slope
+
+        ; change call vector
+        lda #<scrl_seq_up
+        ldx #>scrl_seq_up
+        jmp scrl_seq_addr_write
+
+; sequencer function
+scrl_seq_down
+
+        ; log
+        ;lda scanline
+        ;sta scanline_log
+        ;inc scanline_log        
+        
+        dec scrl_seq_ctr
+        beq scrl_reinit
+        rts
+
+
+
+
+
+
+
+scrl_reinit_up
+        ; reload
+        lda scrl_seq_low
+        sta scrl_seq_ctr
+
+        ; action
+        jsr scrl_seq_up_slope
+
+        ; change call vector
+        lda #<scrl_seq_down
+        ldx #>scrl_seq_down
+        jmp scrl_seq_addr_write
+
+        rts
+
+scrl_seq_up
+
+        ;lda scaline
+        ;sta scanline_log
+        ;inc scanline_log
+        
+        dec scrl_seq_ctr
+        beq scrl_reinit_up
+        rts
+
+
+scrl_seq_low
+        byte $00
+scrl_seq_high
+        byte $00
+scrl_seq_ctr
+        byte $00
+
+
+
+
+
+
+
+
+
+##{0:0:0:colseq.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\colseq.asm
+
+*=$5500
+
+; not perfect, needs some work when x is near 0.
+col_next
+
+        ; decrement col_pos
+        ldx col_pos
+        bne col_pos_dec
+        ldx col_max      ; reload to max value
+col_pos_dec
+        dex
+        stx col_pos
+
+        lda col_data,x
+        sta col_cur
+        
+        ; data must be found in higher bits
+        asl
+        asl
+        asl
+        asl
+        sta $590b  ; store directly into color draw variable!
+        ;jmp col_next  ; uncomment for debugging
+
+        rts
+
+
+col_cur
+        byte 1
+col_pos
+        byte 0  ; current, max_len, including zero
+col_max
+        byte 25
+col_data
+        byte $6,$9,$b,$2, $4,$8,$e,$a, $5,$3,$f,$7, $1
+        byte $7,$f,$3,$5, $a,$e,$8,$4, $2,$b,$9,$6
+
+##{0:0:0:shapes.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\shapes.asm
+
+*=$5600
+
+
+; s+14 = $590e
+; s+15 = $590f
+; s+18 = $5912
+; s+19 = $5913
+
+ANG_DELT   = $590e
+ANG_DELT_L = $590f
+RAD_DELT   = $5912
+RAD_DELT_L = $5913
+
+MANDALA_DRAW    = $5920
+
+shape_square
+        jsr shape_out
+        jsr MANDALA_DRAW
+        jsr shape_cw
+        jsr MANDALA_DRAW
+        jsr shape_in
+        jsr MANDALA_DRAW
+        jsr shape_ccw
+        jsr MANDALA_DRAW
+        rts
+        
+shape_diamond
+        jsr shape_out
+        jsr MANDALA_DRAW
+        jsr shape_cw
+        jsr MANDALA_DRAW
+        jsr shape_in
+        jsr MANDALA_DRAW
+        jsr shape_ccw
+        jsr MANDALA_DRAW
+        rts
+
+
+; ang_delt, ang_delt_low, radius_delt, radius_delt_low
+mouse_outwards
+        byte 0,0,1,0
+mouse_clockwise
+        byte 1,0,0,0
+mouse_inwards
+        byte 0,0,$ff,0
+mouse_counterclockwise
+        byte $ff,0,0,0
+
+; diamond
+mouse_45
+        byte 1,0,1,0
+mouse_135
+        byte $ff,0,1,0
+mouse_225
+        byte $ff,0,$ff,0
+mouse_315
+        byte 1,0,$ff,0
+
+; uses these two zero-pages, $fc-$fd, could interfere with multiply routine!
+PTR_SHAPE       = $fc  ;result lo
+shape_config
+        ldy #$00
+        lda ($fc),y
+        sta ANG_DELT
+        iny
+        lda ($fc),y
+        STA ANG_DELT_L
+        iny
+        lda ($fc),y
+        sta RAD_DELT
+        iny
+        lda ($fc),y
+        sta RAD_DELT_L
+        rts
+
+shape_out
+        lda #<mouse_outwards
+        sta $fc
+        lda #>mouse_outwards
+        sta $fd
+        jsr shape_config
+        rts
+
+shape_cw
+        lda #<mouse_clockwise
+        sta $fc
+        lda #>mouse_clockwise
+        sta $fd
+        jsr shape_config
+        rts
+
+shape_in
+        lda #<mouse_inwards
+        sta $fc
+        lda #>mouse_inwards
+        sta $fd
+        jsr shape_config
+        rts
+
+shape_ccw
+        lda #<mouse_counterclockwise
+        sta $fc
+        lda #>mouse_counterclockwise
+        sta $fd
+        jsr shape_config
+        rts
+
+
+
+shape_list
+        byte <shape_square, >shape_diamond
+
+
+
+##{0:0:0:yoyo.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\yoyo.asm
+
+*=$5800
+
+tmp_xy
+        byte 0,0
+
+yoyo_move
+        jsr yoyo1   ; compute positions
+
+
+        ; do the plotting
+        ldy my_xy
+        ldx cos_table,y
+        ldy my_xy+1
+        jsr mul     ; result in y:x
+        txa         ; 2x to shift decimal point 
+        rol
+        tya
+        rol
+
+        clc
+        adc #128           ; shift to middle of screen
+        tax
+        sta tmp_xy
+
+
+        ldy my_xy
+        ldx sin_table,y
+        ldy my_xy+1
+        jsr mul
+        txa         ; 2x to shift decimal point 
+        rol
+        tya
+        rol
+
+        clc
+        adc #100           ; shift to middle of screen 
+        tay
+                
+        ldx tmp_xy
+        jsr hplotxy
+
+        jmp yoyo_move
+
+
+        
+        
+
+my_xy
+        byte 0,0 
+
+delta_pos
+        byte 1, 1
+
+yoyo1
+
+        ; increment positions
+        lda my_xy
+        clc
+        adc delta_pos
+        sta my_xy
+
+
+        lda my_xy+1
+        clc
+        adc delta_pos+1
+        sta my_xy+1
+
+
+        ; check bounds
+        lda my_xy
+        sec
+        sbc #127
+        bvc lbl_1
+        eor #$80
+lbl_1
+        bpl too_high
+
+        lda my_xy
+        sec
+        sbc #-127
+        bvc lbl_2
+        eor #$80
+lbl_2
+        bmi too_low
+
+its_equal_ok
+        jmp done1
+
+too_low
+        lda #$01
+        sta delta_pos
+        jmp done1
+        
+too_high
+        lda #$ff
+        sta delta_pos
+done1
+
+
+
+
+yoyo2
+        lda my_xy+1
+        sec
+        sbc #99
+        bvc lbl_12
+        eor #$80
+lbl_12
+        bpl too_high2
+
+        lda my_xy+1
+        sec
+        sbc #-99
+        bvc lbl_22
+        eor #$80
+lbl_22
+        bmi too_low2
+
+its_equal_ok2
+        jmp done2
+
+too_low2
+        lda #$01
+        sta delta_pos+1
+        jmp done2
+        
+too_high2
+        lda #$ff
+        sta delta_pos+1
+done2
+
+
+        rts
+
+
+
+
+
+##{0:0:0:mandala.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\mandala.asm
+
+
+
+*=$5900
+
+
+my_xy
+        byte 0,0
+
+angle_tmp
+        byte 0   ; s+2
+angle_bump
+        byte 10  ; s+3
+points_count
+        byte 0,4;  current, max, points within single iteration  ; s+4, s+5
+iters_count
+        byte 0,10; current, max, total iterations with multiple points each
+
+scrn_clr_color
+        byte $01
+scrn_clr_byte
+        byte $00
+old_base_angle_add ; not used anymore
+        byte $00
+plot_color
+        byte $25
+
+; new school
+angle
+        byte 0,0
+angle_delta
+        byte 0,0
+radius
+        byte 0,0
+radius_delta
+        byte 0,0
+angle_ratchet
+        byte 0
+radius_ratchet
+        byte 0
+radius_delta2
+        byte 0,0
+angle_delta2
+        byte 0,0
+
+*=$5920
+mandala
+
+        lda angle
+        sta angle_tmp
+
+        ; number of iters_count
+        lda iters_count+1
+        sta iters_count
+
+mandala_outer
+        ; number of points in e.g. star
+        lda points_count+1
+        sta points_count
+
+mandala_sub
+        ldy angle_tmp
+        ldx cos_table,y
+        ldy radius
+        jsr mul     ; result in y:x
+        txa         ; 2x to shift decimal point 
+        rol
+        tya
+        rol
+
+        clc
+        adc #128           ; shift to middle of screen
+        tax
+        sta my_xy
+
+
+        ldy angle_tmp
+        ldx sin_table,y
+        ldy radius
+        jsr mul
+        txa         ; 2x to shift decimal point 
+        rol
+        tya
+        rol
+
+        clc
+        adc #100           ; shift to middle of screen 
+        tay
+                
+        ldx my_xy
+        jsr hplotxy
+
+        ; advance to next point
+        lda angle_tmp
+        clc
+        adc angle_bump
+        sta angle_tmp
+
+        
+        ; more points left?
+        dec points_count
+        bne mandala_sub
+
+        ; ready for next time
+        jsr radius_delta_incr
+
+        ; more iters left?
+        dec iters_count
+        bne mandala_outer
+
+        ; ratchet/save iterated values for next call
+        clc
+        lda angle_tmp
+        adc angle_ratchet
+        sta angle
+
+        clc
+        lda radius_ratchet
+        adc radius
+        sta radius
+
+        rts
+
+
+radius_delta_incr
+        clc
+        lda radius+1
+        adc radius_delta+1
+        sta radius+1
+        lda radius
+        adc radius_delta
+        sta radius
+
+        clc
+        lda angle+1
+        adc angle_delta+1
+        sta angle+1
+        lda angle
+        adc angle_delta
+        sta angle
+        sta angle_tmp
+        rts
+*=$59d0
+radius_delta2_incr
+        clc
+        lda radius+1
+        adc radius_delta2+1
+        sta radius+1
+        lda radius
+        adc radius_delta2
+        sta radius
+
+        clc
+        lda angle+1
+        adc angle_delta2+1
+        sta angle+1
+        lda angle
+        adc angle_delta2
+        sta angle
+        sta angle_tmp
+        rts
+
+##{0:0:0:multiply.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\multiply.asm
+
+
+
+
+*=$5c00
+
+
+
+;------- MULTIPLY ----------------------
+;8x8bits -> 16 bits, signed input and output
+;x*y -> y(hi) & x(lo)
+;
+;warning: there are quite a few undeclared
+;zero page addresses used by the mulgen subroutine
+;
+;the routine is based on this equation:
+;
+; a*b = ((a+b)/2)^2-((a-b)/2)^2
+;
+;Oswald/Resource
+
+XTMP     = $fb  ;temporary for X reg
+RL       = $fc  ;result lo
+RH       = $fd  ;result hi
+;XTMP     = $e0  ;temporary for X reg
+;RL       = $e1  ;result lo
+;RH       = $e2  ;result hi
+
+SQRL     = $4000 ;low bytes of: x=(x*x)/4; 512 entry on 16 bits
+SQRH     = $4200 ;high bytes
+ABS      = $4400 ;x=abs(x)
+;SQRL     = $2000 ;low bytes of: x=(x*x)/4; 512 entry on 16 bits
+;SQRH     = $2200 ;high bytes
+;ABS      = $2400 ;x=abs(x)
+
+
+        sei; disable ints so zero page unmolested
+
+multiply_init
+         JSR MULGEN    ;table setup
+         JSR MKABS
+        rts
+
+testop
+         LDX #$10
+         LDY #$20
+         JSR MUL      ;a test call to the multiply subroutine
+         JMP *
+         
+;-----------------------------------------------------------
+
+MKABS    LDX #$00     ;generating a table to get the absolute value of signed numbers
+ABSLP    TXA
+         BPL POS
+         EOR #$FF
+         CLC
+         ADC #$01
+POS      STA ABS,X
+         DEX
+         BNE ABSLP
+         RTS
+
+;the multiply routine itself         
+
+MUL      STX XTMP     ;storing X for later use
+         TYA
+         EOR XTMP     ;getting the sign of the final product
+         BMI NEG      ;take another routine if the final product will be negative
+
+
+
+         LDA ABS,X    ;this is the (a+b) part, we strip a&b from their signs using the abs table.
+         CLC          ;it is safe to force both numbers to be positive knowing the final sign of the product which we will set later
+         ADC ABS,Y    ;this is done to avoid overflows, and the extra code/tables needed to handle them.
+         STA XTMP
+
+         LDA ABS,X    ;(abs(a)-abs(b)) 
+         SEC
+         SBC ABS,Y
+         TAY
+
+         LDX ABS,Y   ;((a-b)/2)^2 will be always positive so its safe to do abs(a-b)
+         LDY XTMP    ;we do this since the sqr table can only handle positive numbers
+
+
+         ;now we have a+b in Y and a-b in X
+
+
+                     ;low 8 bits of the product calculated here
+         LDA SQRL,Y  ;((a+b)/2)^2
+         SEC
+         SBC SQRL,X  ;-((a-b)/2)^2
+         STA RL
+                     ;same as above for high 8 bits
+         LDA SQRH,Y
+         SBC SQRH,X
+         TAY
+         LDX RL
+         RTS
+
+;case for negative final product, all the same except inverting the result at the end.
+
+NEG      LDA ABS,X     
+         CLC
+         ADC ABS,Y
+         STA XTMP
+
+         LDA ABS,X
+         SEC
+         SBC ABS,Y
+         TAY
+
+         LDX ABS,Y
+         LDY XTMP
+
+         LDA SQRL,Y
+         SEC
+         SBC SQRL,X
+         STA RL
+
+         LDA SQRH,Y
+         SBC SQRH,X
+         STA RH
+
+                   ;inverting the result's sign
+         LDA RL
+         EOR #$FF
+         CLC
+         ADC #$01
+         STA RL
+         LDA RH
+         EOR #$FF
+         ADC #$00
+         STA RH
+
+         LDY RH
+         LDX RL
+         RTS
+
+;generating a 16 bit table with 512 entrys where x=(x*x)/4
+
+MULGEN   LDA #1
+         STA $c0F0
+         ;STA $F0
+         LDA #0
+         STA $c0F1
+         ;STA $F1
+
+         LDA #0
+         STA $c0F4
+         ;STA $F4
+         STA $c0F5
+         ;STA $F5
+         STA $c0F6
+         ;STA $F6
+         STA SQRL
+         STA SQRH
+
+         LDA #<SQRH
+         STA $FE
+         LDA #>SQRH
+         STA $FF
+
+         LDA #<SQRL
+         ;STA $c0FA
+         STA $FA
+         LDA #>SQRL
+         ;STA $c0FB
+         STA $FB
+
+         LDX #$01
+         LDY #$01
+FFV2
+
+FFV
+         LDA $c0F0
+         ;LDA $F0
+         CLC
+         ADC $c0F4
+         ;ADC $F4
+         STA $c0F4
+         ;STA $F4
+
+         LDA $c0F1
+         ;LDA $F1
+         ADC $c0F5
+         ;ADC $F5
+         STA $c0F5
+         ;STA $F5
+
+         LDA $c0F6
+         ;LDA $F6
+         ADC #$00
+         STA $c0F6
+         ;STA $F6
+
+         LDA $c0F6
+         ;LDA $F6
+         STA $c0B2
+         ;STA $B2
+         LDA $c0F5
+         ;LDA $F5
+         STA $c0B1
+         ;STA $B1
+         LDA $c0F4
+         ;LDA $F4
+         STA $c0B0
+         ;STA $B0
+
+         LSR $c0B2
+         ;LSR $B2
+         ROR $c0B1
+         ;ROR $B1
+         ROR $c0B0
+         ;ROR $B0
+
+         LSR $c0B2
+         ;LSR $B2
+         ROR $c0B1
+         ;ROR $B1
+         ROR $c0B0
+         ;ROR $B0
+
+         LDA $c0B0
+         ;LDA $B0
+         ;STA ($c0FA),Y
+         STA ($FA),Y
+         LDA $c0B1
+         ;LDA $B1
+         STA ($FE),Y
+
+         LDA $c0F0
+         ;LDA $F0
+         CLC
+         ADC #2
+         STA $c0F0
+         ;STA $F0
+         BCC there
+         ;BCC *+4
+         INC $c0F1
+         ;INC $F1
+
+
+there    INY
+         BNE FFV
+
+         LDY #$00
+         INC $FF
+         INC $FB
+         ;INC $c0FB
+         DEX
+         BPL FFV2
+
+         RTS
+
+
+##{0:0:0:rotate.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\rotate.asm
+
+
+
+*=$5e00
+
+cos_table
+        byte  $7f, $7f, $7f, $7f, $7e, $7e, $7e, $7d, $7d, $7c, $7b, $7a, $7a, $79, $78, $77
+        byte  $75, $74, $73, $71, $70, $6f, $6d, $6b, $6a, $68, $66, $64, $62, $60, $5e, $5c
+        byte  $5a, $57, $55, $53, $50, $4e, $4c, $49, $46, $44, $41, $3e, $3c, $39, $36, $33
+        byte  $30, $2d, $2a, $28, $25, $22, $1f, $1b, $18, $15, $12, $0f, $0c, $09, $06, $03
+        byte  $00, $fc, $f9, $f6, $f3, $f0, $ed, $ea, $e7, $e4, $e1, $dd, $da, $d7, $d5, $d2
+        byte  $cf, $cc, $c9, $c6, $c3, $c1, $be, $bb, $b9, $b6, $b4, $b1, $af, $ac, $aa, $a8
+        byte  $a5, $a3, $a1, $9f, $9d, $9b, $99, $97, $95, $94, $92, $90, $8f, $8e, $8c, $8b
+        byte  $8a, $88, $87, $86, $85, $85, $84, $83, $82, $82, $81, $81, $81, $80, $80, $80
+        byte  $80, $80, $80, $80, $81, $81, $81, $82, $82, $83, $84, $85, $85, $86, $87, $88
+        byte  $8a, $8b, $8c, $8e, $8f, $90, $92, $94, $95, $97, $99, $9b, $9d, $9f, $a1, $a3
+        byte  $a5, $a8, $aa, $ac, $af, $b1, $b4, $b6, $b9, $bb, $be, $c1, $c3, $c6, $c9, $cc
+        byte  $cf, $d2, $d5, $d7, $da, $dd, $e1, $e4, $e7, $ea, $ed, $f0, $f3, $f6, $f9, $fc
+        byte  $00, $03, $06, $09, $0c, $0f, $12, $15, $18, $1b, $1f, $22, $25, $28, $2a, $2d
+        byte  $30, $33, $36, $39, $3c, $3e, $41, $44, $46, $49, $4c, $4e, $50, $53, $55, $57
+        byte  $5a, $5c, $5e, $60, $62, $64, $66, $68, $6a, $6b, $6d, $6f, $70, $71, $73, $74
+        byte  $75, $77, $78, $79, $7a, $7a, $7b, $7c, $7d, $7d, $7e, $7e, $7e, $7f, $7f, $7f
+
+sin_table
+        byte  $00, $02, $04, $07, $09, $0c, $0e, $11, $13, $15, $18, $1a, $1c, $1f, $21, $23
+        byte  $26, $28, $2a, $2c, $2e, $31, $33, $35, $37, $39, $3b, $3d, $3f, $40, $42, $44
+        byte  $46, $48, $49, $4b, $4c, $4e, $4f, $51, $52, $54, $55, $56, $57, $58, $59, $5a
+        byte  $5b, $5c, $5d, $5e, $5f, $5f, $60, $61, $61, $62, $62, $62, $63, $63, $63, $63
+        byte  $63, $63, $63, $63, $63, $62, $62, $62, $61, $61, $60, $5f, $5f, $5e, $5d, $5c
+        byte  $5b, $5a, $59, $58, $57, $56, $55, $54, $52, $51, $4f, $4e, $4c, $4b, $49, $48
+        byte  $46, $44, $42, $40, $3f, $3d, $3b, $39, $37, $35, $33, $31, $2e, $2c, $2a, $28
+        byte  $26, $23, $21, $1f, $1c, $1a, $18, $15, $13, $11, $0e, $0c, $09, $07, $04, $02
+        byte  $00, $fd, $fb, $f8, $f6, $f3, $f1, $ef, $ec, $ea, $e7, $e5, $e3, $e0, $de, $dc
+        byte  $d9, $d7, $d5, $d3, $d1, $ce, $cc, $ca, $c8, $c6, $c4, $c2, $c0, $bf, $bd, $bb
+        byte  $b9, $b7, $b6, $b4, $b3, $b1, $b0, $ae, $ad, $ab, $aa, $a9, $a8, $a7, $a6, $a5
+        byte  $a4, $a3, $a2, $a1, $a0, $a0, $9f, $9e, $9e, $9d, $9d, $9d, $9c, $9c, $9c, $9c
+        byte  $9c, $9c, $9c, $9c, $9c, $9d, $9d, $9d, $9e, $9e, $9f, $a0, $a0, $a1, $a2, $a3
+        byte  $a4, $a5, $a6, $a7, $a8, $a9, $aa, $ab, $ad, $ae, $b0, $b1, $b3, $b4, $b6, $b7
+        byte  $b9, $bb, $bd, $bf, $c0, $c2, $c4, $c6, $c8, $ca, $cc, $ce, $d1, $d3, $d5, $d7
+        byte  $d9, $dc, $de, $e0, $e3, $e5, $e7, $ea, $ec, $ef, $f1, $f3, $f6, $f8, $fb, $fd
+
+
+
+##{0:0:0:Main.prg}C:\Users\Noah\CBM_prg_Studio\mandala_2k19c\\Main.asm
+
+
+
+; BASIC header
+;*=$0802
+;        byte 1,0,0
+;        byte $9e,'6144',0,0,0   ; SYS 2061
+
+
+*=$c000
+
+
+main
+        sei
+        jsr multiply_init
+
+        jsr hires_start
+        rts
+
+        lda #$06
+        sta scrn_clr_color
+        jsr scrn_clr
+        rts
+
+refill_screen
+        lda fill_val
+        inc fill_val
+        lda $cb      ; keyboard matrix
+        sta scrn_clr_byte
+        jsr hires_clear
+
+        rts
+
+        jsr mandala_test
+
+wait_here
+        jmp wait_here
+        jmp refill_screen
+
+fill_val
+        byte $3f
+
+
+;-----
+        jsr scroller_init
+        jsr scrl_seq_base_init
+        ;jsr irq_test
+
+
+        ;jmp yoyo_move
+
+main_loop
+        jsr mandala
+
+        jsr erasing_01
+
+        jmp main_loop
+
+        ;jmp loop_start_02
+
+
+
+
+
+
+
+
+
+
+scrl_seq_addr$
+        jsr dummy_routine
+
+
+;frame_no
+;        byte $00
+
+; not actually used, just for blank tabl
+dummy_routine
+        rts
+
+
+mandala_test
+
+        ldx #0
+        ldy #0
+        stx angle
+        sty angle+1
+
+        ldx #5
+        ldy #0
+        stx radius
+        sty radius+1
+
+        ldx #60
+        ldy #0
+        stx angle_delta
+        sty angle_delta+1
+
+        ldx #2
+        ldy #0
+        stx radius_delta
+        sty radius_delta+1
+
+        ldx #90
+        stx angle_ratchet
+
+        ldx #90
+        stx radius_ratchet
+
+        ldx #90
+        ldy #0
+        stx angle_delta2
+        sty angle_delta2+1
+
+        ldx #10
+        ldy #0
+        stx radius_delta2
+        sty radius_delta2+1
+
+        ldx #0
+        ldy #10
+        stx points_count
+        sty points_count+1
+
+        ldx #0
+        ldy #100
+        stx iters_count
+        sty iters_count+1
+
+        lda #10
+        sta angle_bump
+
+        lda #$25
+        sta plot_color
+
+
+        jsr mandala 
+
+        rts
+
+
+
+

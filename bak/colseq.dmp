@@ -1,0 +1,43 @@
+00001  0000             *=$5500
+00002  5500             
+00003  5500             ; NOT PERFECT, NEEDS SOME WORK WHEN X IS NEAR 0.
+00004  5500             COL_NEXT
+00005  5500             
+00006  5500  AE 17 55              LDX COL_POS
+00007  5503  D0 03                 BNE COL_POS_DEC
+00008  5505  AE 18 55              LDX COL_POS+1
+00009  5508             COL_POS_DEC 
+00010  5508  CA                    DEX
+00011  5509  8E 17 55              STX COL_POS
+00012  550C             
+00013  550C  BD 19 55              LDA COL_DATA,X
+00014  550F  8D 16 55              STA COL_CUR
+00015  5512             
+00016  5512  4C 00 55              JMP COL_NEXT  ; UNCOMMENT FOR DEBUGGING
+00017  5515             
+00018  5515  60                    RTS
+00019  5516             
+00020  5516             
+00021  5516             COL_CUR
+00022  5516  01                    BYTE 1
+00023  5517             COL_POS
+00024  5517  00 03                 BYTE 0, 3  ; CURRENT, MAX_LEN, INCLUDING ZERO
+00025  5519             COL_DATA
+00026  5519  06 09 0B              BYTE $6,$9,$B,$2, $4,$8,$E,$A, $5,$3,$F,$7, $1
+00027  5526  07 0F 03              BYTE $7,$F,$3,$5, $A,$E,$8,$4, $2,$B,$9,$6
+00028  5532             
+
+******* 5 Label(s) *******
+col_cur = $5516 
+col_data = $5519 
+col_next = $5500 
+col_pos = $5517 
+col_pos_dec = $5508 
+
+******* 0 Unused label(s) *******
+
+******* 1 Variable(s) *******
+tgt_c64  = $0001
+******* 1 Unused variables(s) *******
+tgt_c64
+

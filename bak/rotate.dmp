@@ -1,0 +1,1831 @@
+00001  0000             
+00002  0001             
+00003  0001             ; BASIC HEADER
+00004  0001             ;*=$0802
+00005  0001             ;        BYTE 1,0,0
+00006  0001             ;        BYTE $9E,'6144',0,0,0   ; SYS 2061
+00007  0001             
+00008  0001             
+00009  0001             *=$5000
+00010  5000             
+00011  5000             INTO_HIRES 
+00012  5000  20 E6 5A              JSR HIRES_START
+00013  5003  60                    RTS
+00014  5004             *=$5008
+00015  5008  AD 08 59              LDA SCRN_CLR_COLOR
+00016  500B  20 0F 5B              JSR SCRN_CLR
+00017  500E  60                    RTS
+00018  500F             
+00019  500F             *=$5010
+00020  5010             INIT_THINGS 
+00021  5010  20 01 5C              JSR MULTIPLY_INIT
+00022  5013  60                    RTS
+00023  5014             
+00024  5014             *=$5018
+00025  5018  20 24 5B              JSR HIRES_CLEAR
+00026  501B  60                    RTS
+00027  501C             
+00028  501C             MAIN
+00029  501C                        ;SEI
+00030  501C             
+00031  501C             
+00032  501C             
+00033  501C  20 00 51              JSR SCROLLER_INIT
+00034  501F  20 00 54              JSR SCRL_SEQ_BASE_INIT
+00035  5022                        ;JSR IRQ_TEST
+00036  5022             
+00037  5022             
+00038  5022                        ;JMP YOYO_MOVE
+00039  5022             
+00040  5022             MAIN_LOOP
+00041  5022  20 20 59              JSR MANDALA
+00042  5025             
+00043  5025  20 8D 5B              JSR ERASING_01
+00044  5028             
+00045  5028  4C 22 50              JMP MAIN_LOOP
+00046  502B             
+00047  502B                        ;JMP LOOP_START_02
+00048  502B             
+00049  502B             
+00050  502B             
+00051  502B             
+00052  502B             
+00053  502B             
+00054  502B             
+00055  502B             
+00056  502B             
+00057  502B             
+00058  502B             SCRL_SEQ_ADDR$ 
+00059  502B  20 2E 50              JSR DUMMY_ROUTINE
+00060  502E             
+00061  502E             
+00062  502E             ;FRAME_NO
+00063  502E             ;        BYTE $00
+00064  502E             
+00065  502E             ; NOT ACTUALLY USED, JUST FOR BLANK TABL
+00066  502E             DUMMY_ROUTINE 
+00067  502E  60                    RTS
+00068  502F             
+00069  502F             
+00070  502F             
+00071  502F             
+00072  502F                        *=$5100
+00073  5100             
+00074  5100                        
+00075  5100                        
+00076  5100             
+00077  5100             SCROLLER_INIT 
+00078  5100             
+00079  5100  A9 02                 LDA #<SCROLL_TEXT
+00080  5102  8D 10 52              STA SCRL_READ_BYTE+1
+00081  5105  A9 53                 LDA #>SCROLL_TEXT
+00082  5107  8D 11 52              STA SCRL_READ_BYTE+2
+00083  510A             
+00084  510A  60                    RTS
+00085  510B             
+00086  510B             
+00087  510B             
+00088  510B             SCRL_UPDATE 
+00089  510B             
+00090  510B                        ; SHIFT CHARS
+00091  510B  20 71 52              JSR SCRL_SHIFT
+00092  510E             
+00093  510E                        ; DRAW COLUMN
+00094  510E  20 1E 51              JSR SCRL_REND_COLM
+00095  5111             
+00096  5111  60                    RTS
+00097  5112             
+00098  5112             SCRL_COLM
+00099  5112  01                    BYTE 1   ; (REVERSE) COLUMN RENDERING, 7-0
+00100  5113             SCRL_CHAR_IDX 
+00101  5113  00                    BYTE 0   ; WHICH PETSCI CHAR RENDERING, 0-255
+00102  5114             SCRL_CHAR
+00103  5114  00 00 00              BYTE 0,0,0,0, 0,0,0,0  ; ENTIRE CHARACTER
+00104  511C             
+00105  511C             
+00106  511C             
+00107  511C             
+00108  511C             SCRL_CLR_PIX = $20
+00109  511C             SCRL_SET_PIX = 160
+00110  511C             
+00111  511C             SCRL_PIX_SET 
+00112  511C  51                    BYTE $51
+00113  511D             SCRL_PIX_CLR 
+00114  511D  20                    BYTE $20
+00115  511E             
+00116  511E             SCRL_REND_COLM 
+00117  511E             
+00118  511E  AD 12 51              LDA SCRL_COLM
+00119  5121  C9 03                 CMP #$03
+00120  5123  D0 00                 BNE ONE_COL_AT_TIME
+00121  5125                        ;JSR SND_UNGATE
+00122  5125             
+00123  5125             ONE_COL_AT_TIME 
+00124  5125                        ; ONE COLUMN AT A TIME
+00125  5125  AE 12 51              LDX SCRL_COLM
+00126  5128  CA                    DEX
+00127  5129  8E 12 51              STX SCRL_COLM
+00128  512C  F0 74                 BEQ FETCH_NEW_CHAR
+00129  512E             SCRL_CHAR_OK 
+00130  512E             
+00131  512E                        ; MOVE THROUGH 8 ROWS
+00132  512E                        ;LDY #SCRL_CLR_PIX        ; CHAR DRAWN FOR CLEAR PIXEL
+00133  512E  AC 1D 51              LDY SCRL_PIX_CLR
+00134  5131  2E 14 51              ROL SCRL_CHAR
+00135  5134  90 03                 BCC SCRL_BIT_CLR0
+00136  5136                        ;LDY #SCRL_SET_PIX        ; CHAR DRAWN FOR SET PIXEL
+00137  5136  AC 1C 51              LDY SCRL_PIX_SET
+00138  5139             SCRL_BIT_CLR0 
+00139  5139  8C CF 06              STY $06CF     ; 1024 + 40 * 17 + 39
+00140  513C             
+00141  513C                        ;LDY #SCRL_CLR_PIX        ; CHAR DRAWN FOR CLEAR PIXEL
+00142  513C  AC 1D 51              LDY SCRL_PIX_CLR
+00143  513F  2E 15 51              ROL SCRL_CHAR+1
+00144  5142  90 03                 BCC SCRL_BIT_CLR1
+00145  5144                        ;LDY #SCRL_SET_PIX        ; CHAR DRAWN FOR SET PIXEL
+00146  5144  AC 1C 51              LDY SCRL_PIX_SET
+00147  5147             SCRL_BIT_CLR1 
+00148  5147  8C F7 06              STY $06F7    ; 1024 + 40 * 17 + 39
+00149  514A             
+00150  514A                        ;LDY #SCRL_CLR_PIX        ; CHAR DRAWN FOR CLEAR PIXEL
+00151  514A  AC 1D 51              LDY SCRL_PIX_CLR
+00152  514D  2E 16 51              ROL SCRL_CHAR+2
+00153  5150  90 03                 BCC SCRL_BIT_CLR2
+00154  5152                        ;LDY #SCRL_SET_PIX        ; CHAR DRAWN FOR SET PIXEL
+00155  5152  AC 1C 51              LDY SCRL_PIX_SET
+00156  5155             SCRL_BIT_CLR2 
+00157  5155  8C 1F 07              STY $071F    ; 1024 + 40 * 17 + 39
+00158  5158             
+00159  5158                        ;LDY #SCRL_CLR_PIX        ; CHAR DRAWN FOR CLEAR PIXEL
+00160  5158  AC 1D 51              LDY SCRL_PIX_CLR
+00161  515B  2E 17 51              ROL SCRL_CHAR+3
+00162  515E  90 03                 BCC SCRL_BIT_CLR3
+00163  5160                        ;LDY #SCRL_SET_PIX        ; CHAR DRAWN FOR SET PIXEL
+00164  5160  AC 1C 51              LDY SCRL_PIX_SET
+00165  5163             SCRL_BIT_CLR3 
+00166  5163  8C 47 07              STY $0747    ; 1024 + 40 * 17 + 39
+00167  5166             
+00168  5166                        ;LDY #SCRL_CLR_PIX        ; CHAR DRAWN FOR CLEAR PIXEL
+00169  5166  AC 1D 51              LDY SCRL_PIX_CLR
+00170  5169  2E 18 51              ROL SCRL_CHAR+4
+00171  516C  90 03                 BCC SCRL_BIT_CLR4
+00172  516E                        ;LDY #SCRL_SET_PIX        ; CHAR DRAWN FOR SET PIXEL
+00173  516E  AC 1C 51              LDY SCRL_PIX_SET
+00174  5171             SCRL_BIT_CLR4 
+00175  5171  8C 6F 07              STY $076F    ; 1024 + 40 * 17 + 39
+00176  5174             
+00177  5174                        ;LDY #SCRL_CLR_PIX        ; CHAR DRAWN FOR CLEAR PIXEL
+00178  5174  AC 1D 51              LDY SCRL_PIX_CLR
+00179  5177  2E 19 51              ROL SCRL_CHAR+5
+00180  517A  90 03                 BCC SCRL_BIT_CLR5
+00181  517C                        ;LDY #SCRL_SET_PIX        ; CHAR DRAWN FOR SET PIXEL
+00182  517C  AC 1C 51              LDY SCRL_PIX_SET
+00183  517F             SCRL_BIT_CLR5 
+00184  517F  8C 97 07              STY $0797    ; 1024 + 40 * 17 + 39
+00185  5182             
+00186  5182                        ;LDY #SCRL_CLR_PIX        ; CHAR DRAWN FOR CLEAR PIXEL
+00187  5182  AC 1D 51              LDY SCRL_PIX_CLR
+00188  5185  2E 1A 51              ROL SCRL_CHAR+6
+00189  5188  90 03                 BCC SCRL_BIT_CLR6
+00190  518A                        ;LDY #SCRL_SET_PIX        ; CHAR DRAWN FOR SET PIXEL
+00191  518A  AC 1C 51              LDY SCRL_PIX_SET
+00192  518D             SCRL_BIT_CLR6 
+00193  518D  8C BF 07              STY $07BF    ; 1024 + 40 * 17 + 39
+00194  5190             
+00195  5190                        ;LDY #SCRL_CLR_PIX        ; CHAR DRAWN FOR CLEAR PIXEL
+00196  5190  AC 1D 51              LDY SCRL_PIX_CLR
+00197  5193  2E 1B 51              ROL SCRL_CHAR+7
+00198  5196  90 03                 BCC SCRL_BIT_CLR7
+00199  5198                        ;LDY #SCRL_SET_PIX        ; CHAR DRAWN FOR SET PIXEL
+00200  5198  AC 1C 51              LDY SCRL_PIX_SET
+00201  519B             SCRL_BIT_CLR7 
+00202  519B  8C E7 07              STY $07E7    ; 1024 + 40 * 17 + 39
+00203  519E             
+00204  519E  60                    RTS
+00205  519F                        
+00206  519F             
+00207  519F             CHAR_ROM_ADDR 
+00208  519F  00 00                 BYTE 0,0
+00209  51A1             
+00210  51A1             CHAR_TEMP_CHAR 
+00211  51A1  00                    BYTE 0
+00212  51A2             
+00213  51A2             ; FETCH NEW CHAR, WRITES CHAR TO SCRL_CHAR
+00214  51A2             FETCH_NEW_CHAR 
+00215  51A2  20 0F 52              JSR PLEASE_SCRL_READ_BYTE ; RETURNS IN ACC
+00216  51A5  D0 03                 BNE NRML_PRINT_CHAR
+00217  51A7  4C 28 52              JMP SCRL_CTRL_FOUND
+00218  51AA             
+00219  51AA                        ; OTHERWISE NORMAL PRINTED CHARACTER
+00220  51AA                        ; RENDER ALPHABET IDX INTO 8-BYTE CHAR DATA VIA CHAR ROM
+00221  51AA             NRML_PRINT_CHAR 
+00222  51AA             
+00223  51AA  8D A1 51              STA CHAR_TEMP_CHAR
+00224  51AD                        ;JSR SOUND_TONE
+00225  51AD  AD A1 51              LDA CHAR_TEMP_CHAR
+00226  51B0             
+00227  51B0  8D 13 51              STA SCRL_CHAR_IDX
+00228  51B3             
+00229  51B3                        ; USING IDX, GET THE 8-BYTE CHARACTER DATA
+00230  51B3  8D 9F 51              STA CHAR_ROM_ADDR      ; LOW_BYTE
+00231  51B6  A2 00                 LDX #$00
+00232  51B8  8E A0 51              STX CHAR_ROM_ADDR+1    ; HIGH BYTE
+00233  51BB             
+00234  51BB                        ; MULTIPLY BYTE 8
+00235  51BB  18                    CLC
+00236  51BC  2E 9F 51              ROL CHAR_ROM_ADDR
+00237  51BF  2E A0 51              ROL CHAR_ROM_ADDR+1
+00238  51C2  18                    CLC
+00239  51C3  2E 9F 51              ROL CHAR_ROM_ADDR
+00240  51C6  2E A0 51              ROL CHAR_ROM_ADDR+1
+00241  51C9  18                    CLC
+00242  51CA  2E 9F 51              ROL CHAR_ROM_ADDR
+00243  51CD  2E A0 51              ROL CHAR_ROM_ADDR+1
+00244  51D0             
+00245  51D0                        ; ADD BASE ADDR $D000 (CHAR ROM ADDR)
+00246  51D0  A9 00                 LDA #$00
+00247  51D2  18                    CLC
+00248  51D3  6D 9F 51              ADC CHAR_ROM_ADDR
+00249  51D6  8D 9F 51              STA CHAR_ROM_ADDR
+00250  51D9  A9 D0                 LDA #$D0
+00251  51DB  6D A0 51              ADC CHAR_ROM_ADDR+1
+00252  51DE  8D A0 51              STA CHAR_ROM_ADDR+1
+00253  51E1             
+00254  51E1                        ; MODIFY READ INSTRUCTION
+00255  51E1  AD 9F 51              LDA CHAR_ROM_ADDR  ; LOW BYTE
+00256  51E4  8D F5 51              STA CHAR_ROM_READ+1
+00257  51E7  AD A0 51              LDA CHAR_ROM_ADDR+1 ; HIGH BYTE
+00258  51EA  8D F6 51              STA CHAR_ROM_READ+2
+00259  51ED             
+00260  51ED                        ; FETCH 8 BYTES OF CHAR DATA
+00261  51ED  A9 33                 LDA #$33   ; POINT TO CHAR ROM AT $D000
+00262  51EF  85 01                 STA $01
+00263  51F1                        ;SEI        ; DISABLE INTS DURING COPYING
+00264  51F1             
+00265  51F1  A2 08                 LDX #$08
+00266  51F3             SCRL_CHAR_FETCH_BYTE 
+00267  51F3  CA                    DEX
+00268  51F4             CHAR_ROM_READ 
+00269  51F4  BD 9F 51              LDA CHAR_ROM_ADDR,X
+00270  51F7  9D 14 51              STA SCRL_CHAR,X
+00271  51FA  8A                    TXA    ; UPDATE FLAGS
+00272  51FB  F0 03                 BEQ SCRL_CHAR_FETCH_DONE
+00273  51FD  4C F3 51              JMP SCRL_CHAR_FETCH_BYTE
+00274  5200             SCRL_CHAR_FETCH_DONE 
+00275  5200             
+00276  5200                        ;CLI        ; RESTORE INTS AFTER COPYING
+00277  5200  A9 35                 LDA #$35   ; POINT TO MEM AT $D000
+00278  5202  85 01                 STA $01
+00279  5204             
+00280  5204  A9 08                 LDA #$08          ; RELOAD COLUMN IDX
+00281  5206  8D 12 51              STA SCRL_COLM
+00282  5209             
+00283  5209  20 13 52              JSR INCR_SCRL_POS
+00284  520C             
+00285  520C  4C 2E 51              JMP SCRL_CHAR_OK
+00286  520F             
+00287  520F             ; READ CURRENT BYTE OF SCROLL TEXT
+00288  520F             PLEASE_SCRL_READ_BYTE 
+00289  520F             SCRL_READ_BYTE 
+00290  520F  AD 02 53              LDA SCROLL_TEXT  ; GETS MODIFIED IN-PLACE
+00291  5212  60                    RTS
+00292  5213             
+00293  5213             ; INCREMENT POSITION IN SCROLL TEXT
+00294  5213             INCR_SCRL_POS 
+00295  5213  18                    CLC
+00296  5214  AD 10 52              LDA SCRL_READ_BYTE+1   ; LO BYTE
+00297  5217  69 01                 ADC #$01
+00298  5219  8D 10 52              STA SCRL_READ_BYTE+1
+00299  521C  AD 11 52              LDA SCRL_READ_BYTE+2
+00300  521F  69 00                 ADC #$00
+00301  5221  8D 11 52              STA SCRL_READ_BYTE+2
+00302  5224  60                    RTS
+00303  5225             
+00304  5225             ; TEMP STORAGE FOR CALLING SUBROUTINE
+00305  5225             REG_TMP
+00306  5225  00 00 00              BYTE 0, 0, 0; ACC,X,Y
+00307  5228             
+00308  5228             SCRL_CTRL_FOUND 
+00309  5228             
+00310  5228                        ; LO-BYTE TARGET ADDRESS
+00311  5228  20 13 52              JSR INCR_SCRL_POS
+00312  522B  20 0F 52              JSR PLEASE_SCRL_READ_BYTE
+00313  522E  8D 6E 52              STA SCRL_SEQ_CALL+1  ; LO-BYTE
+00314  5231                        
+00315  5231                        ; HI-BYTE TARGET ADDRESS
+00316  5231  20 13 52              JSR INCR_SCRL_POS
+00317  5234  20 0F 52              JSR PLEASE_SCRL_READ_BYTE
+00318  5237  8D 6F 52              STA SCRL_SEQ_CALL+2  ; LO-BYTE
+00319  523A             
+00320  523A                        ; ACCUMULATOR VALUE
+00321  523A  20 13 52              JSR INCR_SCRL_POS
+00322  523D  20 0F 52              JSR PLEASE_SCRL_READ_BYTE
+00323  5240  8D 25 52              STA REG_TMP
+00324  5243             
+00325  5243                        ; X REGISTER VALUE
+00326  5243  20 13 52              JSR INCR_SCRL_POS
+00327  5246  20 0F 52              JSR PLEASE_SCRL_READ_BYTE
+00328  5249  8D 26 52              STA REG_TMP+1
+00329  524C             
+00330  524C                        ; Y REGISTER VALUE
+00331  524C  20 13 52              JSR INCR_SCRL_POS
+00332  524F  20 0F 52              JSR PLEASE_SCRL_READ_BYTE
+00333  5252  8D 27 52              STA REG_TMP+2
+00334  5255             
+00335  5255  AD 6E 52              LDA SCRL_SEQ_CALL+1   ; DEVELOPMENT VERIFICATION
+00336  5258  AE 6F 52              LDX SCRL_SEQ_CALL+2
+00337  525B  AD 25 52              LDA REG_TMP           ; RECALL THREE REGS
+00338  525E  AE 26 52              LDX REG_TMP+1
+00339  5261  AC 27 52              LDY REG_TMP+2
+00340  5264             
+00341  5264                        ; UNCOMMENT TO MAKE ACTUAL SUBROUTINE JSR CALL, MODIFIED BY ABOVE
+00342  5264  20 6D 52              JSR PLEASE_SCRL_SEQ_CALL
+00343  5267             
+00344  5267                        ; POINT TO NEXT BYTE IN SEQUENCE
+00345  5267  20 13 52              JSR INCR_SCRL_POS
+00346  526A                        
+00347  526A                        ; KEEP LOOKING FOR MORE CHARS (COULD DROP OF TOO MUCH CPU)
+00348  526A  4C A2 51              JMP FETCH_NEW_CHAR
+00349  526D             
+00350  526D             PLEASE_SCRL_SEQ_CALL 
+00351  526D             SCRL_SEQ_CALL 
+00352  526D  20 6D 52              JSR SCRL_SEQ_CALL        ; GETS MODIFIED BY ABOVE CODE
+00353  5270  60                    RTS
+00354  5271             
+00355  5271                        
+00356  5271             
+00357  5271             
+00358  5271             SCRL_SHIFT 
+00359  5271  A0 27                 LDY #39
+00360  5273  A2 00                 LDX #$00
+00361  5275             SCRL_SHIFT_LOOP 
+00362  5275  BD A9 06              LDA $6A9,X
+00363  5278  9D A8 06              STA $6A8,X
+00364  527B  BD D1 06              LDA $6D1,X
+00365  527E  9D D0 06              STA $6D0,X
+00366  5281  BD F9 06              LDA $6F9,X
+00367  5284  9D F8 06              STA $6F8,X
+00368  5287  BD 21 07              LDA $721,X
+00369  528A  9D 20 07              STA $720,X
+00370  528D  BD 49 07              LDA $749,X
+00371  5290  9D 48 07              STA $748,X
+00372  5293  BD 71 07              LDA $771,X
+00373  5296  9D 70 07              STA $770,X
+00374  5299  BD 99 07              LDA $799,X
+00375  529C  9D 98 07              STA $798,X
+00376  529F  BD C1 07              LDA $7C1,X
+00377  52A2  9D C0 07              STA $7C0,X
+00378  52A5  E8                    INX
+00379  52A6  88                    DEY
+00380  52A7  D0 CC                 BNE SCRL_SHIFT_LOOP
+00381  52A9             
+00382  52A9  60                    RTS
+00383  52AA             
+00384  52AA             
+00385  52AA             
+00386  52AA             SET_BG_FG_COL 
+00387  52AA  8D 20 D0              STA $D020
+00388  52AD  8E 21 D0              STX $D021
+00389  52B0  60                    RTS
+00390  52B1             
+00391  52B1             RESET_SCROLL_TEXT 
+00392  52B1  A9 02                 LDA #<SCROLL_TEXT
+00393  52B3  8D 10 52              STA SCRL_READ_BYTE+1
+00394  52B6  A9 53                 LDA #>SCROLL_TEXT
+00395  52B8  8D 11 52              STA SCRL_READ_BYTE+2
+00396  52BB  60                    RTS
+00397  52BC             
+00398  52BC             
+00399  52BC             COLOR_ROW_START_LOWS 
+00400  52BC  A8 D0 F8              BYTE $A8,$D0,$F8,$20, $48,$70,$98,$C0
+00401  52C4             COLOR_ROW_START_HIS 
+00402  52C4  DA DA DA              BYTE $DA,$DA,$DA,$DB, $DB,$DB,$DB,$DB
+00403  52CC             COLOR_MEM_HLINE_COL 
+00404  52CC  00                    BYTE 0
+00405  52CD             
+00406  52CD             ; A = COLOR
+00407  52CD             ; X = ROW NUMBER
+00408  52CD             ; Y = COUNTDOWN
+00409  52CD             COLOR_MEM_HLINE 
+00410  52CD             
+00411  52CD                        ; SAVE VAL
+00412  52CD  8D CC 52              STA COLOR_MEM_HLINE_COL
+00413  52D0                        
+00414  52D0                        ; MODIFY ADDRESS
+00415  52D0  BD BC 52              LDA COLOR_ROW_START_LOWS,X
+00416  52D3  8D E1 52              STA COLOR_BYTE_WRITE+1
+00417  52D6  BD C4 52              LDA COLOR_ROW_START_HIS,X
+00418  52D9  8D E2 52              STA COLOR_BYTE_WRITE+2
+00419  52DC             
+00420  52DC                        ; LOOP THROUGH WHOLE ROW
+00421  52DC                        ;LDX #40
+00422  52DC             CBYTE_NEXT 
+00423  52DC  88                    DEY
+00424  52DD  AD CC 52              LDA COLOR_MEM_HLINE_COL
+00425  52E0             COLOR_BYTE_WRITE 
+00426  52E0  99 00 D8              STA $D800,Y
+00427  52E3  98                    TYA
+00428  52E4  D0 F6                 BNE CBYTE_NEXT
+00429  52E6  60                    RTS
+00430  52E7             
+00431  52E7             
+00432  52E7             
+00433  52E7             
+00434  52E7             CLR_SCREEN 
+00435  52E7  A2 FA                 LDX #$FA     ;   250 X4 -> 1000 CHARS ON SCREEN
+00436  52E9             
+00437  52E9             CLEAR01
+00438  52E9  9D 00 04              STA $0400,X     ; 400 DEFAULT SCREEN MEMORY
+00439  52EC  9D FA 04              STA $04FA,X
+00440  52EF  9D F4 05              STA $05F4,X
+00441  52F2  9D EE 06              STA $06EE,X
+00442  52F5             
+00443  52F5  CA                    DEX
+00444  52F6  D0 F1                 BNE CLEAR01
+00445  52F8  60                    RTS
+00446  52F9             
+00447  52F9             
+00448  52F9             SET_PLOT_CHARS 
+00449  52F9  8D 1C 51              STA SCRL_PIX_SET
+00450  52FC  8E 1D 51              STX SCRL_PIX_CLR
+00451  52FF  60                    RTS
+00452  5300             
+00453  5300             SET_SND_ROOT 
+00454  5300                        ;STA SND_ROOT
+00455  5300  60                    RTS
+00456  5301             
+00457  5301             SET_SND_CHORD 
+00458  5301                        ;STA SND_CHORD+1
+00459  5301                        ;STX SND_CHORD+2
+00460  5301                        ;STY SND_CHORD+3
+00461  5301  60                    RTS
+00462  5302             
+00463  5302             
+00464  5302             SCROLL_TEXT 
+00465  5302  20 20 20              BYTE '   '
+00466  5305                        ;BYTE '-     -    -   -  - -- -  -   -    -  '
+00467  5305                        ;BYTE 0, <COLOR_MEM_HLINE, >COLOR_MEM_HLINE, 14, 0, 40
+00468  5305                        ;BYTE 0, <COLOR_MEM_HLINE, >COLOR_MEM_HLINE, 14, 1, 40
+00469  5305                        ;BYTE 0, <COLOR_MEM_HLINE, >COLOR_MEM_HLINE, 14, 2, 40
+00470  5305                        ;BYTE 0, <COLOR_MEM_HLINE, >COLOR_MEM_HLINE, 14, 3, 40
+00471  5305                        ;BYTE 0, <COLOR_MEM_HLINE, >COLOR_MEM_HLINE, 14, 4, 40
+00472  5305                        ;BYTE 0, <COLOR_MEM_HLINE, >COLOR_MEM_HLINE, 14, 5, 40
+00473  5305                        ;BYTE 0, <COLOR_MEM_HLINE, >COLOR_MEM_HLINE, 14, 6, 40
+00474  5305                        ;BYTE 0, <COLOR_MEM_HLINE, >COLOR_MEM_HLINE, 14, 7, 40
+00475  5305                        ;BYTE 0, <SET_PLOT_CHARS, >SET_PLOT_CHARS, 160, 32, 0
+00476  5305                        ;BYTE 0, <SET_SND_ROOT,   >SET_SND_ROOT, 7, 0, 0
+00477  5305                        ;BYTE 0, <SET_SND_CHORD,  >SET_SND_CHORD, 4, 7, 10
+00478  5305  20 20 20              BYTE '    HELLO     '
+00479  5313             
+00480  5313  00 E7 52              BYTE 0, <CLR_SCREEN, >CLR_SCREEN, $20, 0, 0
+00481  5319  02 20 19              BYTE 'B Y E !                            '
+00482  533C             
+00483  533C  00 B1 52              BYTE 0, <RESET_SCROLL_TEXT, >RESET_SCROLL_TEXT, 0,0,0
+00484  5342                        
+00485  5342             
+00486  5342             
+00487  5342             *=$5400
+00488  5400             
+00489  5400             SCRL_SEQ_BASE_INIT 
+00490  5400             ; SCROLL SEQ PARAMETERS
+00491  5400  A9 01                 LDA #$01
+00492  5402  A2 01                 LDX #$01
+00493  5404  A0 01                 LDY #$01
+00494  5406  20 0F 54              JSR SCRL_SEQ_INIT$
+00495  5409  60                    RTS
+00496  540A                        
+00497  540A             ; THESE ARE THE FUNCTIONS THAT GET CALLED BY THE TIMER
+00498  540A             SCRL_SEQ_DOWN_SLOPE 
+00499  540A                        ;INC $0410
+00500  540A  60                    RTS
+00501  540B             
+00502  540B             SCRL_SEQ_UP_SLOPE 
+00503  540B                        ;INC $0411
+00504  540B  20 0B 51              JSR SCRL_UPDATE
+00505  540E  60                    RTS
+00506  540F             
+00507  540F             SCRL_SEQ_INIT$ 
+00508  540F             
+00509  540F  8D 54 54              STA SCRL_SEQ_LOW
+00510  5412  8E 55 54              STX SCRL_SEQ_HIGH
+00511  5415  8C 56 54              STY SCRL_SEQ_CTR
+00512  5418                        
+00513  5418                        ; INITIAL CALL VECTOR
+00514  5418  A9 37                 LDA #<SCRL_SEQ_DOWN
+00515  541A  A2 54                 LDX #>SCRL_SEQ_DOWN
+00516  541C  4C 20 54              JMP SCRL_SEQ_ADDR_WRITE
+00517  541F             
+00518  541F  60                    RTS
+00519  5420             
+00520  5420             
+00521  5420             SCRL_SEQ_ADDR_WRITE 
+00522  5420  8D 2C 50              STA SCRL_SEQ_ADDR$+1
+00523  5423  8E 2D 50              STX SCRL_SEQ_ADDR$+2
+00524  5426                        ;LDA #<SCRL_SEQ_UP
+00525  5426                        ;STA STIMULUS_SEQ_ADDR+1
+00526  5426                        ;LDA #>SCRL_SEQ_UP
+00527  5426                        ;STA STIMULUS_SEQ_ADDR+2
+00528  5426             
+00529  5426  60                    RTS
+00530  5427             SCRL_REINIT 
+00531  5427                        ; RE-LOAD
+00532  5427  AD 55 54              LDA SCRL_SEQ_HIGH
+00533  542A  8D 56 54              STA SCRL_SEQ_CTR
+00534  542D                        
+00535  542D                        ; ACTION
+00536  542D  20 0A 54              JSR SCRL_SEQ_DOWN_SLOPE
+00537  5430             
+00538  5430                        ; CHANGE CALL VECTOR
+00539  5430  A9 4E                 LDA #<SCRL_SEQ_UP
+00540  5432  A2 54                 LDX #>SCRL_SEQ_UP
+00541  5434  4C 20 54              JMP SCRL_SEQ_ADDR_WRITE
+00542  5437             
+00543  5437             ; SEQUENCER FUNCTION
+00544  5437             SCRL_SEQ_DOWN 
+00545  5437             
+00546  5437                        ; LOG
+00547  5437                        ;LDA SCANLINE
+00548  5437                        ;STA SCANLINE_LOG
+00549  5437                        ;INC SCANLINE_LOG
+00550  5437                        
+00551  5437  CE 56 54              DEC SCRL_SEQ_CTR
+00552  543A  F0 EB                 BEQ SCRL_REINIT
+00553  543C  60                    RTS
+00554  543D             
+00555  543D             
+00556  543D             
+00557  543D             
+00558  543D             
+00559  543D             
+00560  543D             
+00561  543D             SCRL_REINIT_UP 
+00562  543D                        ; RELOAD
+00563  543D  AD 54 54              LDA SCRL_SEQ_LOW
+00564  5440  8D 56 54              STA SCRL_SEQ_CTR
+00565  5443             
+00566  5443                        ; ACTION
+00567  5443  20 0B 54              JSR SCRL_SEQ_UP_SLOPE
+00568  5446             
+00569  5446                        ; CHANGE CALL VECTOR
+00570  5446  A9 37                 LDA #<SCRL_SEQ_DOWN
+00571  5448  A2 54                 LDX #>SCRL_SEQ_DOWN
+00572  544A  4C 20 54              JMP SCRL_SEQ_ADDR_WRITE
+00573  544D             
+00574  544D  60                    RTS
+00575  544E             
+00576  544E             SCRL_SEQ_UP 
+00577  544E             
+00578  544E                        ;LDA SCALINE
+00579  544E                        ;STA SCANLINE_LOG
+00580  544E                        ;INC SCANLINE_LOG
+00581  544E                        
+00582  544E  CE 56 54              DEC SCRL_SEQ_CTR
+00583  5451  F0 EA                 BEQ SCRL_REINIT_UP
+00584  5453  60                    RTS
+00585  5454             
+00586  5454             
+00587  5454             SCRL_SEQ_LOW 
+00588  5454  00                    BYTE $00
+00589  5455             SCRL_SEQ_HIGH 
+00590  5455  00                    BYTE $00
+00591  5456             SCRL_SEQ_CTR 
+00592  5456  00                    BYTE $00
+00593  5457             
+00594  5457             
+00595  5457             
+00596  5457             
+00597  5457             
+00598  5457             
+00599  5457             
+00600  5457             
+00601  5457             
+00602  5457             *=$5500
+00603  5500             
+00604  5500             ; NOT PERFECT, NEEDS SOME WORK WHEN X IS NEAR 0.
+00605  5500             COL_NEXT
+00606  5500             
+00607  5500                        ; DECREMENT COL_POS
+00608  5500  AE 1B 55              LDX COL_POS
+00609  5503  D0 03                 BNE COL_POS_DEC
+00610  5505  AE 1C 55              LDX COL_MAX      ; RELOAD TO MAX VALUE
+00611  5508             COL_POS_DEC 
+00612  5508  CA                    DEX
+00613  5509  8E 1B 55              STX COL_POS
+00614  550C             
+00615  550C  BD 1D 55              LDA COL_DATA,X
+00616  550F  8D 1A 55              STA COL_CUR
+00617  5512                        
+00618  5512                        ; DATA MUST BE FOUND IN HIGHER BITS
+00619  5512  0A                    ASL
+00620  5513  0A                    ASL
+00621  5514  0A                    ASL
+00622  5515  0A                    ASL
+00623  5516  8D 0B 59              STA $590B  ; STORE DIRECTLY INTO COLOR DRAW VARIABLE!
+00624  5519                        ;JMP COL_NEXT  ; UNCOMMENT FOR DEBUGGING
+00625  5519             
+00626  5519  60                    RTS
+00627  551A             
+00628  551A             
+00629  551A             COL_CUR
+00630  551A  01                    BYTE 1
+00631  551B             COL_POS
+00632  551B  00                    BYTE 0  ; CURRENT, MAX_LEN, INCLUDING ZERO
+00633  551C             COL_MAX
+00634  551C  19                    BYTE 25
+00635  551D             COL_DATA
+00636  551D  06 09 0B              BYTE $6,$9,$B,$2, $4,$8,$E,$A, $5,$3,$F,$7, $1
+00637  552A  07 0F 03              BYTE $7,$F,$3,$5, $A,$E,$8,$4, $2,$B,$9,$6
+00638  5536             
+00639  5536             *=$5600
+00640  5600             
+00641  5600             
+00642  5600             ; S+14 = $590E
+00643  5600             ; S+15 = $590F
+00644  5600             ; S+18 = $5912
+00645  5600             ; S+19 = $5913
+00646  5600             
+00647  5600             ANG_DELT   = $590E
+00648  5600             ANG_DELT_L = $590F
+00649  5600             RAD_DELT   = $5912
+00650  5600             RAD_DELT_L = $5913
+00651  5600             
+00652  5600             MANDALA_DRAW = $5920
+00653  5600             
+00654  5600             SHAPE_SQUARE 
+00655  5600  20 6C 56              JSR SHAPE_OUT
+00656  5603  20 20 59              JSR MANDALA_DRAW
+00657  5606  20 78 56              JSR SHAPE_CW
+00658  5609  20 20 59              JSR MANDALA_DRAW
+00659  560C  20 84 56              JSR SHAPE_IN
+00660  560F  20 20 59              JSR MANDALA_DRAW
+00661  5612  20 90 56              JSR SHAPE_CCW
+00662  5615  20 20 59              JSR MANDALA_DRAW
+00663  5618  60                    RTS
+00664  5619                        
+00665  5619             SHAPE_DIAMOND 
+00666  5619  20 6C 56              JSR SHAPE_OUT
+00667  561C  20 20 59              JSR MANDALA_DRAW
+00668  561F  20 78 56              JSR SHAPE_CW
+00669  5622  20 20 59              JSR MANDALA_DRAW
+00670  5625  20 84 56              JSR SHAPE_IN
+00671  5628  20 20 59              JSR MANDALA_DRAW
+00672  562B  20 90 56              JSR SHAPE_CCW
+00673  562E  20 20 59              JSR MANDALA_DRAW
+00674  5631  60                    RTS
+00675  5632             
+00676  5632             
+00677  5632             ; ANG_DELT, ANG_DELT_LOW, RADIUS_DELT, RADIUS_DELT_LOW
+00678  5632             MOUSE_OUTWARDS 
+00679  5632  00 00 01              BYTE 0,0,1,0
+00680  5636             MOUSE_CLOCKWISE 
+00681  5636  01 00 00              BYTE 1,0,0,0
+00682  563A             MOUSE_INWARDS 
+00683  563A  00 00 FF              BYTE 0,0,$FF,0
+00684  563E             MOUSE_COUNTERCLOCKWISE 
+00685  563E  FF 00 00              BYTE $FF,0,0,0
+00686  5642             
+00687  5642             ; DIAMOND
+00688  5642             MOUSE_45
+00689  5642  01 00 01              BYTE 1,0,1,0
+00690  5646             MOUSE_135
+00691  5646  FF 00 01              BYTE $FF,0,1,0
+00692  564A             MOUSE_225
+00693  564A  FF 00 FF              BYTE $FF,0,$FF,0
+00694  564E             MOUSE_315
+00695  564E  01 00 FF              BYTE 1,0,$FF,0
+00696  5652             
+00697  5652             ; USES THESE TWO ZERO-PAGES, $FC-$FD, COULD INTERFERE WITH MULTIPLY ROUTINE!
+00698  5652             PTR_SHAPE  = $FC  ;RESULT LO
+00699  5652             SHAPE_CONFIG 
+00700  5652  A0 00                 LDY #$00
+00701  5654  B1 FC                 LDA ($FC),Y
+00702  5656  8D 0E 59              STA ANG_DELT
+00703  5659  C8                    INY
+00704  565A  B1 FC                 LDA ($FC),Y
+00705  565C  8D 0F 59              STA ANG_DELT_L
+00706  565F  C8                    INY
+00707  5660  B1 FC                 LDA ($FC),Y
+00708  5662  8D 12 59              STA RAD_DELT
+00709  5665  C8                    INY
+00710  5666  B1 FC                 LDA ($FC),Y
+00711  5668  8D 13 59              STA RAD_DELT_L
+00712  566B  60                    RTS
+00713  566C             
+00714  566C             SHAPE_OUT
+00715  566C  A9 32                 LDA #<MOUSE_OUTWARDS
+00716  566E  85 FC                 STA $FC
+00717  5670  A9 56                 LDA #>MOUSE_OUTWARDS
+00718  5672  85 FD                 STA $FD
+00719  5674  20 52 56              JSR SHAPE_CONFIG
+00720  5677  60                    RTS
+00721  5678             
+00722  5678             SHAPE_CW
+00723  5678  A9 36                 LDA #<MOUSE_CLOCKWISE
+00724  567A  85 FC                 STA $FC
+00725  567C  A9 56                 LDA #>MOUSE_CLOCKWISE
+00726  567E  85 FD                 STA $FD
+00727  5680  20 52 56              JSR SHAPE_CONFIG
+00728  5683  60                    RTS
+00729  5684             
+00730  5684             SHAPE_IN
+00731  5684  A9 3A                 LDA #<MOUSE_INWARDS
+00732  5686  85 FC                 STA $FC
+00733  5688  A9 56                 LDA #>MOUSE_INWARDS
+00734  568A  85 FD                 STA $FD
+00735  568C  20 52 56              JSR SHAPE_CONFIG
+00736  568F  60                    RTS
+00737  5690             
+00738  5690             SHAPE_CCW
+00739  5690  A9 3E                 LDA #<MOUSE_COUNTERCLOCKWISE
+00740  5692  85 FC                 STA $FC
+00741  5694  A9 56                 LDA #>MOUSE_COUNTERCLOCKWISE
+00742  5696  85 FD                 STA $FD
+00743  5698  20 52 56              JSR SHAPE_CONFIG
+00744  569B  60                    RTS
+00745  569C             
+00746  569C             
+00747  569C             
+00748  569C             SHAPE_LIST 
+00749  569C  00 56                 BYTE <SHAPE_SQUARE, >SHAPE_DIAMOND
+00750  569E             
+00751  569E             
+00752  569E             
+00753  569E             *=$5800
+00754  5800             
+00755  5800             TMP_XY
+00756  5800  00 00                 BYTE 0,0
+00757  5802             
+00758  5802             YOYO_MOVE
+00759  5802  20 3D 58              JSR YOYO1   ; COMPUTE POSITIONS
+00760  5805             
+00761  5805             
+00762  5805                        ; DO THE PLOTTING
+00763  5805  AC 00 59              LDY MY_XY
+00764  5808  BE 00 5E              LDX COS_TABLE,Y
+00765  580B  AC 01 59              LDY MY_XY+1
+00766  580E  20 23 5C              JSR MUL     ; RESULT IN Y:X
+00767  5811  8A                    TXA         ; 2X TO SHIFT DECIMAL POINT
+00768  5812  2A                    ROL
+00769  5813  98                    TYA
+00770  5814  2A                    ROL
+00771  5815             
+00772  5815  18                    CLC
+00773  5816  69 80                 ADC #128           ; SHIFT TO MIDDLE OF SCREEN
+00774  5818  AA                    TAX
+00775  5819  8D 00 58              STA TMP_XY
+00776  581C             
+00777  581C             
+00778  581C  AC 00 59              LDY MY_XY
+00779  581F  BE 00 5F              LDX SIN_TABLE,Y
+00780  5822  AC 01 59              LDY MY_XY+1
+00781  5825  20 23 5C              JSR MUL
+00782  5828  8A                    TXA         ; 2X TO SHIFT DECIMAL POINT
+00783  5829  2A                    ROL
+00784  582A  98                    TYA
+00785  582B  2A                    ROL
+00786  582C             
+00787  582C  18                    CLC
+00788  582D  69 64                 ADC #100           ; SHIFT TO MIDDLE OF SCREEN
+00789  582F  A8                    TAY
+00790  5830                        
+00791  5830  AE 00 58              LDX TMP_XY
+00792  5833  20 33 5A              JSR HPLOTXY
+00793  5836             
+00794  5836  4C 02 58              JMP YOYO_MOVE
+00795  5839             
+00796  5839             
+00797  5839                        
+00798  5839                        
+00799  5839             
+00800  5839             MY_XY
+00801  5839  00 00                 BYTE 0,0
+00802  583B             
+00803  583B             DELTA_POS
+00804  583B  01 01                 BYTE 1, 1
+00805  583D             
+00806  583D             YOYO1
+00807  583D             
+00808  583D                        ; INCREMENT POSITIONS
+00809  583D  AD 39 58              LDA MY_XY
+00810  5840  18                    CLC
+00811  5841  6D 3B 58              ADC DELTA_POS
+00812  5844  8D 39 58              STA MY_XY
+00813  5847             
+00814  5847             
+00815  5847  AD 3A 58              LDA MY_XY+1
+00816  584A  18                    CLC
+00817  584B  6D 3C 58              ADC DELTA_POS+1
+00818  584E  8D 3A 58              STA MY_XY+1
+00819  5851             
+00820  5851             
+00821  5851                        ; CHECK BOUNDS
+00822  5851  AD 39 58              LDA MY_XY
+00823  5854  38                    SEC
+00824  5855  E9 7F                 SBC #127
+00825  5857  50 02                 BVC LBL_1
+00826  5859  49 80                 EOR #$80
+00827  585B             LBL_1
+00828  585B  10 17                 BPL TOO_HIGH
+00829  585D             
+00830  585D  AD 39 58              LDA MY_XY
+00831  5860  38                    SEC
+00832  5861  E9 81                 SBC #-127
+00833  5863  50 02                 BVC LBL_2
+00834  5865  49 80                 EOR #$80
+00835  5867             LBL_2
+00836  5867  30 03                 BMI TOO_LOW
+00837  5869             
+00838  5869             ITS_EQUAL_OK 
+00839  5869  4C 79 58              JMP DONE1
+00840  586C             
+00841  586C             TOO_LOW
+00842  586C  A9 01                 LDA #$01
+00843  586E  8D 3B 58              STA DELTA_POS
+00844  5871  4C 79 58              JMP DONE1
+00845  5874                        
+00846  5874             TOO_HIGH
+00847  5874  A9 FF                 LDA #$FF
+00848  5876  8D 3B 58              STA DELTA_POS
+00849  5879             DONE1
+00850  5879             
+00851  5879             
+00852  5879             
+00853  5879             
+00854  5879             YOYO2
+00855  5879  AD 3A 58              LDA MY_XY+1
+00856  587C  38                    SEC
+00857  587D  E9 63                 SBC #99
+00858  587F  50 02                 BVC LBL_12
+00859  5881  49 80                 EOR #$80
+00860  5883             LBL_12
+00861  5883  10 17                 BPL TOO_HIGH2
+00862  5885             
+00863  5885  AD 3A 58              LDA MY_XY+1
+00864  5888  38                    SEC
+00865  5889  E9 9D                 SBC #-99
+00866  588B  50 02                 BVC LBL_22
+00867  588D  49 80                 EOR #$80
+00868  588F             LBL_22
+00869  588F  30 03                 BMI TOO_LOW2
+00870  5891             
+00871  5891             ITS_EQUAL_OK2 
+00872  5891  4C A1 58              JMP DONE2
+00873  5894             
+00874  5894             TOO_LOW2
+00875  5894  A9 01                 LDA #$01
+00876  5896  8D 3C 58              STA DELTA_POS+1
+00877  5899  4C A1 58              JMP DONE2
+00878  589C                        
+00879  589C             TOO_HIGH2
+00880  589C  A9 FF                 LDA #$FF
+00881  589E  8D 3C 58              STA DELTA_POS+1
+00882  58A1             DONE2
+00883  58A1             
+00884  58A1             
+00885  58A1  60                    RTS
+00886  58A2             
+00887  58A2             
+00888  58A2             
+00889  58A2             
+00890  58A2             
+00891  58A2             
+00892  58A2             
+00893  58A2             *=$5900
+00894  5900             
+00895  5900             
+00896  5900             MY_XY
+00897  5900  00 00                 BYTE 0,0
+00898  5902             
+00899  5902             ANGLE_TMP
+00900  5902  00                    BYTE 0
+00901  5903             ANGLE_BUMP 
+00902  5903  0A                    BYTE 10
+00903  5904             POINTS_COUNT 
+00904  5904  00 04                 BYTE 0,4;  CURRENT, MAX, POINTS WITHIN SINGLE ITERATION
+00905  5906             ITERS_COUNT 
+00906  5906  00 0A                 BYTE 0,10; CURRENT, MAX, TOTAL ITERATIONS WITH MULTIPLE POINTS EACH
+00907  5908             
+00908  5908             SCRN_CLR_COLOR 
+00909  5908  01                    BYTE $01
+00910  5909             SCRN_CLR_BYTE 
+00911  5909  55                    BYTE $55
+00912  590A             OLD_BASE_ANGLE_ADD ; NOT USED ANYMORE
+00913  590A  00                    BYTE $00
+00914  590B             PLOT_COLOR 
+00915  590B  25                    BYTE $25
+00916  590C             
+00917  590C             ; NEW SCHOOL
+00918  590C             ANGLE
+00919  590C  00 00                 BYTE 0,0
+00920  590E             ANGLE_DELTA 
+00921  590E  00 00                 BYTE 0,0
+00922  5910             RADIUS
+00923  5910  00 00                 BYTE 0,0
+00924  5912             RADIUS_DELTA 
+00925  5912  00 00                 BYTE 0,0
+00926  5914             ANGLE_RATCHET 
+00927  5914  00                    BYTE 0
+00928  5915             RADIUS_RATCHET 
+00929  5915  00                    BYTE 0
+00930  5916             RADIUS_DELTA2 
+00931  5916  00 00                 BYTE 0,0
+00932  5918             ANGLE_DELTA2 
+00933  5918  00 00                 BYTE 0,0
+00934  591A             
+00935  591A             *=$5920
+00936  5920             MANDALA
+00937  5920             
+00938  5920  AD 0C 59              LDA ANGLE
+00939  5923  8D 02 59              STA ANGLE_TMP
+00940  5926             
+00941  5926                        ; NUMBER OF ITERS_COUNT
+00942  5926  AD 07 59              LDA ITERS_COUNT+1
+00943  5929  8D 06 59              STA ITERS_COUNT
+00944  592C             
+00945  592C             MANDALA_OUTER 
+00946  592C                        ; NUMBER OF POINTS IN E.G. STAR
+00947  592C  AD 05 59              LDA POINTS_COUNT+1
+00948  592F  8D 04 59              STA POINTS_COUNT
+00949  5932             
+00950  5932             MANDALA_SUB 
+00951  5932  AC 02 59              LDY ANGLE_TMP
+00952  5935  BE 00 5E              LDX COS_TABLE,Y
+00953  5938  AC 10 59              LDY RADIUS
+00954  593B  20 23 5C              JSR MUL     ; RESULT IN Y:X
+00955  593E  8A                    TXA         ; 2X TO SHIFT DECIMAL POINT
+00956  593F  2A                    ROL
+00957  5940  98                    TYA
+00958  5941  2A                    ROL
+00959  5942             
+00960  5942  18                    CLC
+00961  5943  69 80                 ADC #128           ; SHIFT TO MIDDLE OF SCREEN
+00962  5945  AA                    TAX
+00963  5946  8D 00 59              STA MY_XY
+00964  5949             
+00965  5949             
+00966  5949  AC 02 59              LDY ANGLE_TMP
+00967  594C  BE 00 5F              LDX SIN_TABLE,Y
+00968  594F  AC 10 59              LDY RADIUS
+00969  5952  20 23 5C              JSR MUL
+00970  5955  8A                    TXA         ; 2X TO SHIFT DECIMAL POINT
+00971  5956  2A                    ROL
+00972  5957  98                    TYA
+00973  5958  2A                    ROL
+00974  5959             
+00975  5959  18                    CLC
+00976  595A  69 64                 ADC #100           ; SHIFT TO MIDDLE OF SCREEN
+00977  595C  A8                    TAY
+00978  595D                        
+00979  595D  AE 00 59              LDX MY_XY
+00980  5960  20 33 5A              JSR HPLOTXY
+00981  5963             
+00982  5963                        ; ADVANCE TO NEXT POINT
+00983  5963  AD 02 59              LDA ANGLE_TMP
+00984  5966  18                    CLC
+00985  5967  6D 03 59              ADC ANGLE_BUMP
+00986  596A  8D 02 59              STA ANGLE_TMP
+00987  596D             
+00988  596D                        
+00989  596D                        ; MORE POINTS LEFT?
+00990  596D  CE 04 59              DEC POINTS_COUNT
+00991  5970  D0 C0                 BNE MANDALA_SUB
+00992  5972             
+00993  5972                        ; READY FOR NEXT TIME
+00994  5972  20 8F 59              JSR RADIUS_DELTA_INCR
+00995  5975             
+00996  5975                        ; MORE ITERS LEFT?
+00997  5975  CE 06 59              DEC ITERS_COUNT
+00998  5978  D0 B2                 BNE MANDALA_OUTER
+00999  597A             
+01000  597A                        ; RATCHET/SAVE ITERATED VALUES FOR NEXT CALL
+01001  597A  18                    CLC
+01002  597B  AD 02 59              LDA ANGLE_TMP
+01003  597E  6D 14 59              ADC ANGLE_RATCHET
+01004  5981  8D 0C 59              STA ANGLE
+01005  5984             
+01006  5984  18                    CLC
+01007  5985  AD 15 59              LDA RADIUS_RATCHET
+01008  5988  6D 10 59              ADC RADIUS
+01009  598B  8D 10 59              STA RADIUS
+01010  598E             
+01011  598E  60                    RTS
+01012  598F             
+01013  598F             
+01014  598F             RADIUS_DELTA_INCR 
+01015  598F  18                    CLC
+01016  5990  AD 11 59              LDA RADIUS+1
+01017  5993  6D 13 59              ADC RADIUS_DELTA+1
+01018  5996  8D 11 59              STA RADIUS+1
+01019  5999  AD 10 59              LDA RADIUS
+01020  599C  6D 12 59              ADC RADIUS_DELTA
+01021  599F  8D 10 59              STA RADIUS
+01022  59A2             
+01023  59A2  18                    CLC
+01024  59A3  AD 0D 59              LDA ANGLE+1
+01025  59A6  6D 0F 59              ADC ANGLE_DELTA+1
+01026  59A9  8D 0D 59              STA ANGLE+1
+01027  59AC  AD 0C 59              LDA ANGLE
+01028  59AF  6D 0E 59              ADC ANGLE_DELTA
+01029  59B2  8D 0C 59              STA ANGLE
+01030  59B5  8D 02 59              STA ANGLE_TMP
+01031  59B8  60                    RTS
+01032  59B9             *=$59D0
+01033  59D0             RADIUS_DELTA2_INCR 
+01034  59D0  18                    CLC
+01035  59D1  AD 11 59              LDA RADIUS+1
+01036  59D4  6D 17 59              ADC RADIUS_DELTA2+1
+01037  59D7  8D 11 59              STA RADIUS+1
+01038  59DA  AD 10 59              LDA RADIUS
+01039  59DD  6D 16 59              ADC RADIUS_DELTA2
+01040  59E0  8D 10 59              STA RADIUS
+01041  59E3             
+01042  59E3  18                    CLC
+01043  59E4  AD 0D 59              LDA ANGLE+1
+01044  59E7  6D 19 59              ADC ANGLE_DELTA2+1
+01045  59EA  8D 0D 59              STA ANGLE+1
+01046  59ED  AD 0C 59              LDA ANGLE
+01047  59F0  6D 18 59              ADC ANGLE_DELTA2
+01048  59F3  8D 0C 59              STA ANGLE
+01049  59F6  8D 02 59              STA ANGLE_TMP
+01050  59F9  60                    RTS
+01051  59FA             
+01052  59FA             
+01053  59FA             
+01054  59FA             
+01055  59FA             *=$5A00    ; 0X104 BYTES LONG
+01056  5A00             
+01057  5A00             HIRES_END
+01058  5A00  AD 11 D0              LDA 53265
+01059  5A03  29 DF                 AND #$DF
+01060  5A05  8D 11 D0              STA 53265
+01061  5A08             
+01062  5A08  AD 18 D0              LDA 53272
+01063  5A0B  29 F7                 AND #$F7
+01064  5A0D  8D 18 D0              STA 53272
+01065  5A10             
+01066  5A10  60                    RTS
+01067  5A11             
+01068  5A11             ; COLOR IN COLOR MEMORY AKA SCREEN MEM FOR HIRES
+01069  5A11             HCOL_PLOT
+01070  5A11                        ; GET BASE ADDR FROM TABLE
+01071  5A11  AD 78 5A              LDA COORD+1 ;Y COORD TURNS INTO ROW
+01072  5A14  4A                    LSR
+01073  5A15  4A                    LSR  ; ONLY TWO SHIFTS BECAUSE TABLE IS TWO BYTE ADDRS
+01074  5A16  29 FE                 AND #$FE
+01075  5A18  A8                    TAY
+01076  5A19  B9 B4 5A              LDA TAB_SCR,Y
+01077  5A1C  8D 30 5A              STA WRITE_COL+1
+01078  5A1F  B9 B5 5A              LDA TAB_SCR+1,Y
+01079  5A22  8D 31 5A              STA WRITE_COL+2
+01080  5A25                        
+01081  5A25  AD 77 5A              LDA COORD; X COORD
+01082  5A28  4A                    LSR
+01083  5A29  4A                    LSR
+01084  5A2A  4A                    LSR
+01085  5A2B  AA                    TAX
+01086  5A2C             
+01087  5A2C  AD 0B 59              LDA PLOT_COLOR
+01088  5A2F             WRITE_COL
+01089  5A2F  9D FF FF              STA $FFFF,X
+01090  5A32  60                    RTS
+01091  5A33             
+01092  5A33             ; HIRES DRAWING ROUTINE!
+01093  5A33             
+01094  5A33             HPLOTXY
+01095  5A33  8E 77 5A              STX COORD
+01096  5A36  8C 78 5A              STY COORD+1
+01097  5A39             
+01098  5A39  20 11 5A              JSR HCOL_PLOT  ; FILL IN THE COLOR PORTION!
+01099  5A3C             
+01100  5A3C                        ;GET BASE ADDR FROM TABLE
+01101  5A3C  AD 78 5A              LDA COORD+1
+01102  5A3F  4A                    LSR
+01103  5A40  4A                    LSR
+01104  5A41  29 3E                 AND #$3E
+01105  5A43  A8                    TAY
+01106  5A44  B9 7A 5A              LDA TABLE1,Y
+01107  5A47  8D 6E 5A              STA READ_PIX+1
+01108  5A4A  8D 74 5A              STA WRITE_PIX+1
+01109  5A4D  B9 7B 5A              LDA TABLE1+1,Y
+01110  5A50  8D 6F 5A              STA READ_PIX+2
+01111  5A53  8D 75 5A              STA WRITE_PIX+2
+01112  5A56             
+01113  5A56                        ; GENERATE OFFSET
+01114  5A56  AD 78 5A              LDA COORD+1
+01115  5A59  29 07                 AND #$07
+01116  5A5B  8D 79 5A              STA TMP
+01117  5A5E  AD 77 5A              LDA COORD
+01118  5A61  29 F8                 AND #$F8
+01119  5A63  0D 79 5A              ORA TMP
+01120  5A66  AA                    TAX
+01121  5A67             
+01122  5A67                        ; GENERATE BITMSK
+01123  5A67  AD 77 5A              LDA COORD
+01124  5A6A  29 07                 AND #$07
+01125  5A6C  A8                    TAY
+01126  5A6D             
+01127  5A6D                        ; PERFORM SCREEN UPDATE
+01128  5A6D             READ_PIX
+01129  5A6D  BD A0 20              LDA $20A0,X
+01130  5A70  19 AC 5A              ORA TABLE2,Y
+01131  5A73             WRITE_PIX
+01132  5A73  9D A0 20              STA $20A0,X
+01133  5A76                        
+01134  5A76  60                    RTS
+01135  5A77             
+01136  5A77             COORD
+01137  5A77  60 32                 BYTE 96, 50
+01138  5A79             
+01139  5A79             TMP
+01140  5A79  00                    BYTE 0
+01141  5A7A             
+01142  5A7A             
+01143  5A7A             ; START ADDRESS OF THE 25 ROWS
+01144  5A7A             
+01145  5A7A             ; SHIFTED RIGHT BY 32 + 128 = 160 PIXELS TO MID-SCREEN
+01146  5A7A             ; FOR USE WITH SIGNED 7-BIT NUMBERS
+01147  5A7A             
+01148  5A7A             
+01149  5A7A             ; ROW STARTS
+01150  5A7A             ; SHIFTED TO RIGHT BY 32 BYTES (32PIX) TO CENTER 256 PIXEL IMAGE
+01151  5A7A             TABLE1
+01152  5A7A  20 20 60              BYTE $2020, $2160, $22A0, $23E0
+01153  5A82  20 25 60              BYTE $2520, $2660, $27A0, $28E0
+01154  5A8A  20 2A 60              BYTE $2A20, $2B60, $2CA0, $2DE0
+01155  5A92  20 2F 60              BYTE $2F20, $3060, $31A0, $32E0
+01156  5A9A  20 34 60              BYTE $3420, $3560, $36A0, $37E0
+01157  5AA2  20 39 60              BYTE $3920, $3A60, $3BA0, $3CE0
+01158  5AAA  20 3E                 BYTE $3E20
+01159  5AAC             TABLE2
+01160  5AAC  80 40 20              BYTE $80, $40, $20, $10, $08, $04, $02, $01
+01161  5AB4             
+01162  5AB4             TAB_SCR    
+01163  5AB4  04 04 2C              BYTE $404, $42C, $454, $47C
+01164  5ABC  A4 04 CC              BYTE $4A4, $4CC, $4F4, $51C
+01165  5AC4  44 05 6C              BYTE $544, $56C, $594, $5BC
+01166  5ACC  E4 05 0C              BYTE $5E4, $60C, $634, $65C
+01167  5AD4  84 06 AC              BYTE $684, $6AC, $6D4, $6FC
+01168  5ADC  24 07 4C              BYTE $724, $74C, $774, $79C
+01169  5AE4  9C 07                 BYTE $79C
+01170  5AE6             
+01171  5AE6             ;     BYTE $414, $43C, $464, $48C
+01172  5AE6             ;       BYTE $4B4, $4DC, $504, $52C
+01173  5AE6             ;       BYTE $554, $57C, $5A4, $5CC
+01174  5AE6             ;       BYTE $5F4, $61C, $644, $66C
+01175  5AE6             ;       BYTE $694, $6BC, $6E4, $70C
+01176  5AE6             ;       BYTE $734, $75C, $784, $7AC
+01177  5AE6             ;       BYTE $7D4
+01178  5AE6             
+01179  5AE6             HIRES_START 
+01180  5AE6             
+01181  5AE6                        ; BANK OUT THE BASIC ROM, SO HIRES SCREEN CAN START AT $A000
+01182  5AE6  A5 01                 LDA $01
+01183  5AE8  49 FE                 EOR #$FE   ;WE TURN OFF THE BASIC HERE
+01184  5AEA  85 01                 STA $01    ;THE CPU NOW SEES RAM EVERYWHERE EXCEPT AT $D000-$DFFF, WHERE STILL THE REGISTERS OF
+01185  5AEC                        ;SID/VICII/ETC ARE VISIBLE
+01186  5AEC                        ; AND E000-FFFF WHERE THE KERNAL IS VISIBLE
+01187  5AEC             
+01188  5AEC                        ; SET THE VIC BASE ADDRESS TO $8000
+01189  5AEC  AD 00 DD              LDA $DD00
+01190  5AEF  29 FC                 AND #$FC
+01191  5AF1  09 01                 ORA #$01    ; PAGE 2 = $8000
+01192  5AF3  8D 00 DD              STA $DD00
+01193  5AF6             
+01194  5AF6                        ; SET THE VM13 BIT IN $D018, (53272) MEMORY POINTS
+01195  5AF6                        ; THIS SHIFTS SCREEN FROM $8000 TO $A000
+01196  5AF6  AD 18 D0              LDA $D018
+01197  5AF9  09 80                 ORA #$80
+01198  5AFB  8D 18 D0              STA $D018
+01199  5AFE                        
+01200  5AFE             
+01201  5AFE                        ; SWITCH TO HIRES MODE
+01202  5AFE  AD 11 D0              LDA 53265   ; $D011
+01203  5B01  09 20                 ORA #$20
+01204  5B03  8D 11 D0              STA 53265
+01205  5B06             
+01206  5B06                        ; SET CHARACTER SET (THIS IS PROB UNNECESSARY)
+01207  5B06  AD 18 D0              LDA 53272   ; $D018
+01208  5B09  09 08                 ORA #$08
+01209  5B0B  8D 18 D0              STA 53272
+01210  5B0E             
+01211  5B0E  60                    RTS
+01212  5B0F             
+01213  5B0F             
+01214  5B0F             
+01215  5B0F             
+01216  5B0F             SCRN_CLR
+01217  5B0F  A2 00                 LDX #$00
+01218  5B11             SCRN_CLR_LP 
+01219  5B11  AD 08 59              LDA SCRN_CLR_COLOR
+01220  5B14  9D 00 04              STA $0400,X
+01221  5B17  9D 00 05              STA $0500,X
+01222  5B1A  9D 00 06              STA $0600,X
+01223  5B1D  9D 00 07              STA $0700,X
+01224  5B20  CA                    DEX
+01225  5B21  D0 EE                 BNE SCRN_CLR_LP
+01226  5B23  60                    RTS
+01227  5B24             
+01228  5B24             HIRES_CLEAR 
+01229  5B24                        ; CLEAR SCREEN
+01230  5B24  A2 00                 LDX #$00
+01231  5B26  AD 09 59              LDA SCRN_CLR_BYTE
+01232  5B29             
+01233  5B29             HIRES_CLEAR_LP 
+01234  5B29  9D 00 20              STA $2000,X
+01235  5B2C  9D 00 21              STA $2100,X
+01236  5B2F  9D 00 22              STA $2200,X
+01237  5B32  9D 00 23              STA $2300,X
+01238  5B35  9D 00 24              STA $2400,X
+01239  5B38  9D 00 25              STA $2500,X
+01240  5B3B  9D 00 26              STA $2600,X
+01241  5B3E  9D 00 27              STA $2700,X
+01242  5B41  9D 00 28              STA $2800,X
+01243  5B44  9D 00 29              STA $2900,X
+01244  5B47  9D 00 2A              STA $2A00,X
+01245  5B4A  9D 00 2B              STA $2B00,X
+01246  5B4D  9D 00 2C              STA $2C00,X
+01247  5B50  9D 00 2D              STA $2D00,X
+01248  5B53  9D 00 2E              STA $2E00,X
+01249  5B56  9D 00 2F              STA $2F00,X
+01250  5B59  9D 00 30              STA $3000,X
+01251  5B5C  9D 00 31              STA $3100,X
+01252  5B5F  9D 00 32              STA $3200,X
+01253  5B62  9D 00 33              STA $3300,X
+01254  5B65  9D 00 34              STA $3400,X
+01255  5B68  9D 00 35              STA $3500,X
+01256  5B6B  9D 00 36              STA $3600,X
+01257  5B6E  9D 00 37              STA $3700,X
+01258  5B71  9D 00 38              STA $3800,X
+01259  5B74  9D 00 39              STA $3900,X
+01260  5B77  9D 00 3A              STA $3A00,X
+01261  5B7A  9D 00 3B              STA $3B00,X
+01262  5B7D  9D 00 3C              STA $3C00,X
+01263  5B80  9D 00 3D              STA $3D00,X
+01264  5B83  9D 00 3E              STA $3E00,X
+01265  5B86  9D 00 3F              STA $3F00,X
+01266  5B89  CA                    DEX
+01267  5B8A  D0 9D                 BNE HIRES_CLEAR_LP
+01268  5B8C                        
+01269  5B8C  60                    RTS
+01270  5B8D             
+01271  5B8D             
+01272  5B8D             
+01273  5B8D             ERASING_01 
+01274  5B8D  AE 12 D0              LDX $D012
+01275  5B90  8E 96 5B              STX ERASE_ME+1
+01276  5B93             
+01277  5B93  A9 00                 LDA #$00
+01278  5B95             ERASE_ME
+01279  5B95  9D 00 20              STA $2000,X
+01280  5B98  9D 00 21              STA $2100,X
+01281  5B9B  9D 00 22              STA $2200,X
+01282  5B9E  9D 00 23              STA $2300,X
+01283  5BA1  9D 00 24              STA $2400,X
+01284  5BA4  9D 00 25              STA $2500,X
+01285  5BA7  9D 00 26              STA $2600,X
+01286  5BAA  9D 00 27              STA $2700,X
+01287  5BAD  9D 00 28              STA $2800,X
+01288  5BB0  9D 00 29              STA $2900,X
+01289  5BB3  9D 00 2A              STA $2A00,X
+01290  5BB6  9D 00 2B              STA $2B00,X
+01291  5BB9  9D 00 2C              STA $2C00,X
+01292  5BBC  9D 00 2D              STA $2D00,X
+01293  5BBF  9D 00 2E              STA $2E00,X
+01294  5BC2  9D 00 2F              STA $2F00,X
+01295  5BC5  9D 00 30              STA $3000,X
+01296  5BC8  9D 00 31              STA $3100,X
+01297  5BCB  9D 00 32              STA $3200,X
+01298  5BCE  9D 00 33              STA $3300,X
+01299  5BD1  9D 00 34              STA $3400,X
+01300  5BD4  9D 00 35              STA $3500,X
+01301  5BD7  9D 00 36              STA $3600,X
+01302  5BDA  9D 00 37              STA $3700,X
+01303  5BDD  9D 00 38              STA $3800,X
+01304  5BE0  9D 00 39              STA $3900,X
+01305  5BE3  9D 00 3A              STA $3A00,X
+01306  5BE6  9D 00 3B              STA $3B00,X
+01307  5BE9  9D 00 3C              STA $3C00,X
+01308  5BEC  9D 00 3D              STA $3D00,X
+01309  5BEF  9D 00 3E              STA $3E00,X
+01310  5BF2  9D 00 3F              STA $3F00,X
+01311  5BF5             
+01312  5BF5  60                    RTS
+01313  5BF6             
+01314  5BF6             
+01315  5BF6             
+01316  5BF6             
+01317  5BF6             
+01318  5BF6             *=$5C00
+01319  5C00             
+01320  5C00             
+01321  5C00             
+01322  5C00             ;------- MULTIPLY ----------------------
+01323  5C00             ;8X8BITS -> 16 BITS, SIGNED INPUT AND OUTPUT
+01324  5C00             ;X*Y -> Y(HI) & X(LO)
+01325  5C00             ;
+01326  5C00             ;WARNING: THERE ARE QUITE A FEW UNDECLARED
+01327  5C00             ;ZERO PAGE ADDRESSES USED BY THE MULGEN SUBROUTINE
+01328  5C00             ;
+01329  5C00             ;THE ROUTINE IS BASED ON THIS EQUATION:
+01330  5C00             ;
+01331  5C00             ; A*B = ((A+B)/2)^2-((A-B)/2)^2
+01332  5C00             ;
+01333  5C00             ;OSWALD/RESOURCE
+01334  5C00             
+01335  5C00             XTMP       = $FB  ;TEMPORARY FOR X REG
+01336  5C00             RL         = $FC  ;RESULT LO
+01337  5C00             RH         = $FD  ;RESULT HI
+01338  5C00             ;XTMP     = $E0  ;TEMPORARY FOR X REG
+01339  5C00             ;RL       = $E1  ;RESULT LO
+01340  5C00             ;RH       = $E2  ;RESULT HI
+01341  5C00             
+01342  5C00             SQRL       = $4000 ;LOW BYTES OF: X=(X*X)/4; 512 ENTRY ON 16 BITS
+01343  5C00             SQRH       = $4200 ;HIGH BYTES
+01344  5C00             ABS        = $4400 ;X=ABS(X)
+01345  5C00             ;SQRL     = $2000 ;LOW BYTES OF: X=(X*X)/4; 512 ENTRY ON 16 BITS
+01346  5C00             ;SQRH     = $2200 ;HIGH BYTES
+01347  5C00             ;ABS      = $2400 ;X=ABS(X)
+01348  5C00             
+01349  5C00             
+01350  5C00  78                    SEI; DISABLE INTS SO ZERO PAGE UNMOLESTED
+01351  5C01             
+01352  5C01             MULTIPLY_INIT 
+01353  5C01  20 90 5C              JSR MULGEN    ;TABLE SETUP
+01354  5C04  20 12 5C              JSR MKABS
+01355  5C07  60                    RTS
+01356  5C08             
+01357  5C08             TESTOP
+01358  5C08  A2 10                 LDX #$10
+01359  5C0A  A0 20                 LDY #$20
+01360  5C0C  20 23 5C              JSR MUL      ;A TEST CALL TO THE MULTIPLY SUBROUTINE
+01361  5C0F  4C 0F 5C              JMP *
+01362  5C12                        
+01363  5C12             ;-----------------------------------------------------------
+01364  5C12             
+01365  5C12  A2 00      MKABS      LDX #$00     ;GENERATING A TABLE TO GET THE ABSOLUTE VALUE OF SIGNED NUMBERS
+01366  5C14  8A         ABSLP      TXA
+01367  5C15  10 05                 BPL POS
+01368  5C17  49 FF                 EOR #$FF
+01369  5C19  18                    CLC
+01370  5C1A  69 01                 ADC #$01
+01371  5C1C  9D 00 44   POS        STA ABS,X
+01372  5C1F  CA                    DEX
+01373  5C20  D0 F2                 BNE ABSLP
+01374  5C22  60                    RTS
+01375  5C23             
+01376  5C23             ;THE MULTIPLY ROUTINE ITSELF
+01377  5C23             
+01378  5C23  86 FB      MUL        STX XTMP     ;STORING X FOR LATER USE
+01379  5C25  98                    TYA
+01380  5C26  45 FB                 EOR XTMP     ;GETTING THE SIGN OF THE FINAL PRODUCT
+01381  5C28  30 29                 BMI NEG      ;TAKE ANOTHER ROUTINE IF THE FINAL PRODUCT WILL BE NEGATIVE
+01382  5C2A             
+01383  5C2A             
+01384  5C2A             
+01385  5C2A  BD 00 44              LDA ABS,X    ;THIS IS THE (A+B) PART, WE STRIP A&B FROM THEIR SIGNS USING THE ABS TABLE.
+01386  5C2D  18                    CLC          ;IT IS SAFE TO FORCE BOTH NUMBERS TO BE POSITIVE KNOWING THE FINAL SIGN OF THE PRODUCT WHICH WE WILL SET LATER
+01387  5C2E  79 00 44              ADC ABS,Y    ;THIS IS DONE TO AVOID OVERFLOWS, AND THE EXTRA CODE/TABLES NEEDED TO HANDLE THEM.
+01388  5C31  85 FB                 STA XTMP
+01389  5C33             
+01390  5C33  BD 00 44              LDA ABS,X    ;(ABS(A)-ABS(B))
+01391  5C36  38                    SEC
+01392  5C37  F9 00 44              SBC ABS,Y
+01393  5C3A  A8                    TAY
+01394  5C3B             
+01395  5C3B  BE 00 44              LDX ABS,Y   ;((A-B)/2)^2 WILL BE ALWAYS POSITIVE SO ITS SAFE TO DO ABS(A-B)
+01396  5C3E  A4 FB                 LDY XTMP    ;WE DO THIS SINCE THE SQR TABLE CAN ONLY HANDLE POSITIVE NUMBERS
+01397  5C40             
+01398  5C40             
+01399  5C40                        ;NOW WE HAVE A+B IN Y AND A-B IN X
+01400  5C40             
+01401  5C40             
+01402  5C40                        ;LOW 8 BITS OF THE PRODUCT CALCULATED HERE
+01403  5C40  B9 00 40              LDA SQRL,Y  ;((A+B)/2)^2
+01404  5C43  38                    SEC
+01405  5C44  FD 00 40              SBC SQRL,X  ;-((A-B)/2)^2
+01406  5C47  85 FC                 STA RL
+01407  5C49                        ;SAME AS ABOVE FOR HIGH 8 BITS
+01408  5C49  B9 00 42              LDA SQRH,Y
+01409  5C4C  FD 00 42              SBC SQRH,X
+01410  5C4F  A8                    TAY
+01411  5C50  A6 FC                 LDX RL
+01412  5C52  60                    RTS
+01413  5C53             
+01414  5C53             ;CASE FOR NEGATIVE FINAL PRODUCT, ALL THE SAME EXCEPT INVERTING THE RESULT AT THE END.
+01415  5C53             
+01416  5C53  BD 00 44   NEG        LDA ABS,X
+01417  5C56  18                    CLC
+01418  5C57  79 00 44              ADC ABS,Y
+01419  5C5A  85 FB                 STA XTMP
+01420  5C5C             
+01421  5C5C  BD 00 44              LDA ABS,X
+01422  5C5F  38                    SEC
+01423  5C60  F9 00 44              SBC ABS,Y
+01424  5C63  A8                    TAY
+01425  5C64             
+01426  5C64  BE 00 44              LDX ABS,Y
+01427  5C67  A4 FB                 LDY XTMP
+01428  5C69             
+01429  5C69  B9 00 40              LDA SQRL,Y
+01430  5C6C  38                    SEC
+01431  5C6D  FD 00 40              SBC SQRL,X
+01432  5C70  85 FC                 STA RL
+01433  5C72             
+01434  5C72  B9 00 42              LDA SQRH,Y
+01435  5C75  FD 00 42              SBC SQRH,X
+01436  5C78  85 FD                 STA RH
+01437  5C7A             
+01438  5C7A                        ;INVERTING THE RESULT'S SIGN
+01439  5C7A  A5 FC                 LDA RL
+01440  5C7C  49 FF                 EOR #$FF
+01441  5C7E  18                    CLC
+01442  5C7F  69 01                 ADC #$01
+01443  5C81  85 FC                 STA RL
+01444  5C83  A5 FD                 LDA RH
+01445  5C85  49 FF                 EOR #$FF
+01446  5C87  69 00                 ADC #$00
+01447  5C89  85 FD                 STA RH
+01448  5C8B             
+01449  5C8B  A4 FD                 LDY RH
+01450  5C8D  A6 FC                 LDX RL
+01451  5C8F  60                    RTS
+01452  5C90             
+01453  5C90             ;GENERATING A 16 BIT TABLE WITH 512 ENTRYS WHERE X=(X*X)/4
+01454  5C90             
+01455  5C90  A9 01      MULGEN     LDA #1
+01456  5C92  8D F0 C0              STA $C0F0
+01457  5C95                        ;STA $F0
+01458  5C95  A9 00                 LDA #0
+01459  5C97  8D F1 C0              STA $C0F1
+01460  5C9A                        ;STA $F1
+01461  5C9A             
+01462  5C9A  A9 00                 LDA #0
+01463  5C9C  8D F4 C0              STA $C0F4
+01464  5C9F                        ;STA $F4
+01465  5C9F  8D F5 C0              STA $C0F5
+01466  5CA2                        ;STA $F5
+01467  5CA2  8D F6 C0              STA $C0F6
+01468  5CA5                        ;STA $F6
+01469  5CA5  8D 00 40              STA SQRL
+01470  5CA8  8D 00 42              STA SQRH
+01471  5CAB             
+01472  5CAB  A9 00                 LDA #<SQRH
+01473  5CAD  85 FE                 STA $FE
+01474  5CAF  A9 42                 LDA #>SQRH
+01475  5CB1  85 FF                 STA $FF
+01476  5CB3             
+01477  5CB3  A9 00                 LDA #<SQRL
+01478  5CB5                        ;STA $C0FA
+01479  5CB5  85 FA                 STA $FA
+01480  5CB7  A9 40                 LDA #>SQRL
+01481  5CB9                        ;STA $C0FB
+01482  5CB9  85 FB                 STA $FB
+01483  5CBB             
+01484  5CBB  A2 01                 LDX #$01
+01485  5CBD  A0 01                 LDY #$01
+01486  5CBF             FFV2
+01487  5CBF             
+01488  5CBF             FFV
+01489  5CBF  AD F0 C0              LDA $C0F0
+01490  5CC2                        ;LDA $F0
+01491  5CC2  18                    CLC
+01492  5CC3  6D F4 C0              ADC $C0F4
+01493  5CC6                        ;ADC $F4
+01494  5CC6  8D F4 C0              STA $C0F4
+01495  5CC9                        ;STA $F4
+01496  5CC9             
+01497  5CC9  AD F1 C0              LDA $C0F1
+01498  5CCC                        ;LDA $F1
+01499  5CCC  6D F5 C0              ADC $C0F5
+01500  5CCF                        ;ADC $F5
+01501  5CCF  8D F5 C0              STA $C0F5
+01502  5CD2                        ;STA $F5
+01503  5CD2             
+01504  5CD2  AD F6 C0              LDA $C0F6
+01505  5CD5                        ;LDA $F6
+01506  5CD5  69 00                 ADC #$00
+01507  5CD7  8D F6 C0              STA $C0F6
+01508  5CDA                        ;STA $F6
+01509  5CDA             
+01510  5CDA  AD F6 C0              LDA $C0F6
+01511  5CDD                        ;LDA $F6
+01512  5CDD  8D B2 C0              STA $C0B2
+01513  5CE0                        ;STA $B2
+01514  5CE0  AD F5 C0              LDA $C0F5
+01515  5CE3                        ;LDA $F5
+01516  5CE3  8D B1 C0              STA $C0B1
+01517  5CE6                        ;STA $B1
+01518  5CE6  AD F4 C0              LDA $C0F4
+01519  5CE9                        ;LDA $F4
+01520  5CE9  8D B0 C0              STA $C0B0
+01521  5CEC                        ;STA $B0
+01522  5CEC             
+01523  5CEC  4E B2 C0              LSR $C0B2
+01524  5CEF                        ;LSR $B2
+01525  5CEF  6E B1 C0              ROR $C0B1
+01526  5CF2                        ;ROR $B1
+01527  5CF2  6E B0 C0              ROR $C0B0
+01528  5CF5                        ;ROR $B0
+01529  5CF5             
+01530  5CF5  4E B2 C0              LSR $C0B2
+01531  5CF8                        ;LSR $B2
+01532  5CF8  6E B1 C0              ROR $C0B1
+01533  5CFB                        ;ROR $B1
+01534  5CFB  6E B0 C0              ROR $C0B0
+01535  5CFE                        ;ROR $B0
+01536  5CFE             
+01537  5CFE  AD B0 C0              LDA $C0B0
+01538  5D01                        ;LDA $B0
+01539  5D01                        ;STA ($C0FA),Y
+01540  5D01  91 FA                 STA ($FA),Y
+01541  5D03  AD B1 C0              LDA $C0B1
+01542  5D06                        ;LDA $B1
+01543  5D06  91 FE                 STA ($FE),Y
+01544  5D08             
+01545  5D08  AD F0 C0              LDA $C0F0
+01546  5D0B                        ;LDA $F0
+01547  5D0B  18                    CLC
+01548  5D0C  69 02                 ADC #2
+01549  5D0E  8D F0 C0              STA $C0F0
+01550  5D11                        ;STA $F0
+01551  5D11  90 03                 BCC THERE
+01552  5D13                        ;BCC *+4
+01553  5D13  EE F1 C0              INC $C0F1
+01554  5D16                        ;INC $F1
+01555  5D16             
+01556  5D16             
+01557  5D16  C8         THERE      INY
+01558  5D17  D0 A6                 BNE FFV
+01559  5D19             
+01560  5D19  A0 00                 LDY #$00
+01561  5D1B  E6 FF                 INC $FF
+01562  5D1D  E6 FB                 INC $FB
+01563  5D1F                        ;INC $C0FB
+01564  5D1F  CA                    DEX
+01565  5D20  10 9D                 BPL FFV2
+01566  5D22             
+01567  5D22  60                    RTS
+01568  5D23             
+01569  5D23             
+01570  5D23             
+01571  5D23             
+01572  5D23             *=$5E00
+01573  5E00             
+01574  5E00             COS_TABLE
+01575  5E00  7F 7F 7F              BYTE  $7F, $7F, $7F, $7F, $7E, $7E, $7E, $7D, $7D, $7C, $7B, $7A, $7A, $79, $78, $77
+01576  5E10  75 74 73              BYTE  $75, $74, $73, $71, $70, $6F, $6D, $6B, $6A, $68, $66, $64, $62, $60, $5E, $5C
+01577  5E20  5A 57 55              BYTE  $5A, $57, $55, $53, $50, $4E, $4C, $49, $46, $44, $41, $3E, $3C, $39, $36, $33
+01578  5E30  30 2D 2A              BYTE  $30, $2D, $2A, $28, $25, $22, $1F, $1B, $18, $15, $12, $0F, $0C, $09, $06, $03
+01579  5E40  00 FC F9              BYTE  $00, $FC, $F9, $F6, $F3, $F0, $ED, $EA, $E7, $E4, $E1, $DD, $DA, $D7, $D5, $D2
+01580  5E50  CF CC C9              BYTE  $CF, $CC, $C9, $C6, $C3, $C1, $BE, $BB, $B9, $B6, $B4, $B1, $AF, $AC, $AA, $A8
+01581  5E60  A5 A3 A1              BYTE  $A5, $A3, $A1, $9F, $9D, $9B, $99, $97, $95, $94, $92, $90, $8F, $8E, $8C, $8B
+01582  5E70  8A 88 87              BYTE  $8A, $88, $87, $86, $85, $85, $84, $83, $82, $82, $81, $81, $81, $80, $80, $80
+01583  5E80  80 80 80              BYTE  $80, $80, $80, $80, $81, $81, $81, $82, $82, $83, $84, $85, $85, $86, $87, $88
+01584  5E90  8A 8B 8C              BYTE  $8A, $8B, $8C, $8E, $8F, $90, $92, $94, $95, $97, $99, $9B, $9D, $9F, $A1, $A3
+01585  5EA0  A5 A8 AA              BYTE  $A5, $A8, $AA, $AC, $AF, $B1, $B4, $B6, $B9, $BB, $BE, $C1, $C3, $C6, $C9, $CC
+01586  5EB0  CF D2 D5              BYTE  $CF, $D2, $D5, $D7, $DA, $DD, $E1, $E4, $E7, $EA, $ED, $F0, $F3, $F6, $F9, $FC
+01587  5EC0  00 03 06              BYTE  $00, $03, $06, $09, $0C, $0F, $12, $15, $18, $1B, $1F, $22, $25, $28, $2A, $2D
+01588  5ED0  30 33 36              BYTE  $30, $33, $36, $39, $3C, $3E, $41, $44, $46, $49, $4C, $4E, $50, $53, $55, $57
+01589  5EE0  5A 5C 5E              BYTE  $5A, $5C, $5E, $60, $62, $64, $66, $68, $6A, $6B, $6D, $6F, $70, $71, $73, $74
+01590  5EF0  75 77 78              BYTE  $75, $77, $78, $79, $7A, $7A, $7B, $7C, $7D, $7D, $7E, $7E, $7E, $7F, $7F, $7F
+01591  5F00             
+01592  5F00             SIN_TABLE
+01593  5F00  00 02 04              BYTE  $00, $02, $04, $07, $09, $0C, $0E, $11, $13, $15, $18, $1A, $1C, $1F, $21, $23
+01594  5F10  26 28 2A              BYTE  $26, $28, $2A, $2C, $2E, $31, $33, $35, $37, $39, $3B, $3D, $3F, $40, $42, $44
+01595  5F20  46 48 49              BYTE  $46, $48, $49, $4B, $4C, $4E, $4F, $51, $52, $54, $55, $56, $57, $58, $59, $5A
+01596  5F30  5B 5C 5D              BYTE  $5B, $5C, $5D, $5E, $5F, $5F, $60, $61, $61, $62, $62, $62, $63, $63, $63, $63
+01597  5F40  63 63 63              BYTE  $63, $63, $63, $63, $63, $62, $62, $62, $61, $61, $60, $5F, $5F, $5E, $5D, $5C
+01598  5F50  5B 5A 59              BYTE  $5B, $5A, $59, $58, $57, $56, $55, $54, $52, $51, $4F, $4E, $4C, $4B, $49, $48
+01599  5F60  46 44 42              BYTE  $46, $44, $42, $40, $3F, $3D, $3B, $39, $37, $35, $33, $31, $2E, $2C, $2A, $28
+01600  5F70  26 23 21              BYTE  $26, $23, $21, $1F, $1C, $1A, $18, $15, $13, $11, $0E, $0C, $09, $07, $04, $02
+01601  5F80  00 FD FB              BYTE  $00, $FD, $FB, $F8, $F6, $F3, $F1, $EF, $EC, $EA, $E7, $E5, $E3, $E0, $DE, $DC
+01602  5F90  D9 D7 D5              BYTE  $D9, $D7, $D5, $D3, $D1, $CE, $CC, $CA, $C8, $C6, $C4, $C2, $C0, $BF, $BD, $BB
+01603  5FA0  B9 B7 B6              BYTE  $B9, $B7, $B6, $B4, $B3, $B1, $B0, $AE, $AD, $AB, $AA, $A9, $A8, $A7, $A6, $A5
+01604  5FB0  A4 A3 A2              BYTE  $A4, $A3, $A2, $A1, $A0, $A0, $9F, $9E, $9E, $9D, $9D, $9D, $9C, $9C, $9C, $9C
+01605  5FC0  9C 9C 9C              BYTE  $9C, $9C, $9C, $9C, $9C, $9D, $9D, $9D, $9E, $9E, $9F, $A0, $A0, $A1, $A2, $A3
+01606  5FD0  A4 A5 A6              BYTE  $A4, $A5, $A6, $A7, $A8, $A9, $AA, $AB, $AD, $AE, $B0, $B1, $B3, $B4, $B6, $B7
+01607  5FE0  B9 BB BD              BYTE  $B9, $BB, $BD, $BF, $C0, $C2, $C4, $C6, $C8, $CA, $CC, $CE, $D1, $D3, $D5, $D7
+01608  5FF0  D9 DC DE              BYTE  $D9, $DC, $DE, $E0, $E3, $E5, $E7, $EA, $EC, $EF, $F1, $F3, $F6, $F8, $FB, $FD
+01609  6000             
+01610  6000             
+01611  6000             
+
+******* 158 Label(s) *******
+ABSLP = $5C14 
+angle = $590C 
+angle_bump = $5903 
+angle_delta = $590E 
+angle_delta2 = $5918 
+angle_ratchet = $5914 
+angle_tmp = $5902 
+cbyte_next = $52DC 
+char_rom_addr = $519F 
+char_rom_read = $51F4 
+char_temp_char = $51A1 
+clear01 = $52E9 
+clr_screen = $52E7 
+col_cur = $551A 
+col_data = $551D 
+col_max = $551C 
+col_next = $5500 
+col_pos = $551B 
+col_pos_dec = $5508 
+color_byte_write = $52E0 
+color_mem_hline = $52CD 
+color_mem_hline_col = $52CC 
+color_row_start_his = $52C4 
+color_row_start_lows = $52BC 
+coord = $5A77 
+cos_table = $5E00 
+delta_pos = $583B 
+done1 = $5879 
+done2 = $58A1 
+dummy_routine = $502E 
+erase_me = $5B95 
+erasing_01 = $5B8D 
+fetch_new_char = $51A2 
+FFV = $5CBF 
+FFV2 = $5CBF 
+hcol_plot = $5A11 
+hires_clear = $5B24 
+hires_clear_lp = $5B29 
+hires_end = $5A00 
+hires_start = $5AE6 
+hplotxy = $5A33 
+incr_scrl_pos = $5213 
+init_things = $5010 
+into_hires = $5000 
+iters_count = $5906 
+its_equal_ok = $5869 
+its_equal_ok2 = $5891 
+lbl_1 = $585B 
+lbl_12 = $5883 
+lbl_2 = $5867 
+lbl_22 = $588F 
+main = $501C 
+main_loop = $5022 
+mandala = $5920 
+mandala_outer = $592C 
+mandala_sub = $5932 
+MKABS = $5C12 
+mouse_135 = $5646 
+mouse_225 = $564A 
+mouse_315 = $564E 
+mouse_45 = $5642 
+mouse_clockwise = $5636 
+mouse_counterclockwise = $563E 
+mouse_inwards = $563A 
+mouse_outwards = $5632 
+MUL = $5C23 
+MULGEN = $5C90 
+multiply_init = $5C01 
+my_xy = $5900 
+NEG = $5C53 
+nrml_print_char = $51AA 
+old_base_angle_add = $590A 
+one_col_at_time = $5125 
+please_scrl_read_byte = $520F 
+please_scrl_seq_call = $526D 
+plot_color = $590B 
+points_count = $5904 
+POS = $5C1C 
+radius = $5910 
+radius_delta = $5912 
+radius_delta_incr = $598F 
+radius_delta2 = $5916 
+radius_delta2_incr = $59D0 
+radius_ratchet = $5915 
+read_pix = $5A6D 
+reg_tmp = $5225 
+reset_scroll_text = $52B1 
+scrl_bit_clr0 = $5139 
+scrl_bit_clr1 = $5147 
+scrl_bit_clr2 = $5155 
+scrl_bit_clr3 = $5163 
+scrl_bit_clr4 = $5171 
+scrl_bit_clr5 = $517F 
+scrl_bit_clr6 = $518D 
+scrl_bit_clr7 = $519B 
+scrl_char = $5114 
+scrl_char_fetch_byte = $51F3 
+scrl_char_fetch_done = $5200 
+scrl_char_idx = $5113 
+scrl_char_ok = $512E 
+scrl_colm = $5112 
+scrl_ctrl_found = $5228 
+scrl_pix_clr = $511D 
+scrl_pix_set = $511C 
+scrl_read_byte = $520F 
+scrl_reinit = $5427 
+scrl_reinit_up = $543D 
+scrl_rend_colm = $511E 
+scrl_seq_addr$ = $502B 
+scrl_seq_addr_write = $5420 
+scrl_seq_base_init = $5400 
+scrl_seq_call = $526D 
+scrl_seq_ctr = $5456 
+scrl_seq_down = $5437 
+scrl_seq_down_slope = $540A 
+scrl_seq_high = $5455 
+scrl_seq_init$ = $540F 
+scrl_seq_low = $5454 
+scrl_seq_up = $544E 
+scrl_seq_up_slope = $540B 
+scrl_shift = $5271 
+scrl_shift_loop = $5275 
+scrl_update = $510B 
+scrn_clr = $5B0F 
+scrn_clr_byte = $5909 
+scrn_clr_color = $5908 
+scrn_clr_lp = $5B11 
+scroll_text = $5302 
+scroller_init = $5100 
+set_bg_fg_col = $52AA 
+set_plot_chars = $52F9 
+set_snd_chord = $5301 
+set_snd_root = $5300 
+shape_ccw = $5690 
+shape_config = $5652 
+shape_cw = $5678 
+shape_diamond = $5619 
+shape_in = $5684 
+shape_list = $569C 
+shape_out = $566C 
+shape_square = $5600 
+sin_table = $5F00 
+tab_scr = $5AB4 
+table1 = $5A7A 
+table2 = $5AAC 
+testop = $5C08 
+there = $5D16 
+tmp = $5A79 
+tmp_xy = $5800 
+too_high = $5874 
+too_high2 = $589C 
+too_low = $586C 
+too_low2 = $5894 
+write_col = $5A2F 
+write_pix = $5A73 
+yoyo_move = $5802 
+yoyo1 = $583D 
+yoyo2 = $5879 
+
+******* 34 Unused label(s) *******
+char_rom_read
+clr_screen
+col_next
+color_byte_write
+color_mem_hline
+erase_me
+hires_end
+init_things
+into_hires
+its_equal_ok
+its_equal_ok2
+main
+mouse_135
+mouse_225
+mouse_315
+mouse_45
+my_xy
+old_base_angle_add
+radius_delta2_incr
+read_pix
+reset_scroll_text
+scrl_read_byte
+scrl_seq_addr$
+set_bg_fg_col
+set_plot_chars
+set_snd_chord
+set_snd_root
+shape_diamond
+shape_list
+shape_square
+testop
+write_col
+write_pix
+yoyo2
+
+******* 15 Variable(s) *******
+ABS  = $4400
+ANG_DELT  = $590E
+ANG_DELT_L  = $590F
+MANDALA_DRAW  = $5920
+PTR_SHAPE  = $00FC
+RAD_DELT  = $5912
+RAD_DELT_L  = $5913
+RH  = $00FD
+RL  = $00FC
+scrl_clr_pix  = $0020
+scrl_set_pix  = $00A0
+SQRH  = $4200
+SQRL  = $4000
+tgt_c64  = $0001
+XTMP  = $00FB
+******* 5 Unused variables(s) *******
+ABS
+PTR_SHAPE
+scrl_clr_pix
+scrl_set_pix
+tgt_c64
+

@@ -1,0 +1,285 @@
+00001  0000             
+00002  0001             
+00003  0001             
+00004  0001             *=$5C00
+00005  5C00             
+00006  5C00             
+00007  5C00             
+00008  5C00             ;------- MULTIPLY ----------------------
+00009  5C00             ;8X8BITS -> 16 BITS, SIGNED INPUT AND OUTPUT
+00010  5C00             ;X*Y -> Y(HI) & X(LO)
+00011  5C00             ;
+00012  5C00             ;WARNING: THERE ARE QUITE A FEW UNDECLARED
+00013  5C00             ;ZERO PAGE ADDRESSES USED BY THE MULGEN SUBROUTINE
+00014  5C00             ;
+00015  5C00             ;THE ROUTINE IS BASED ON THIS EQUATION:
+00016  5C00             ;
+00017  5C00             ; A*B = ((A+B)/2)^2-((A-B)/2)^2
+00018  5C00             ;
+00019  5C00             ;OSWALD/RESOURCE
+00020  5C00             
+00021  5C00             XTMP       = $FB  ;TEMPORARY FOR X REG
+00022  5C00             RL         = $FC  ;RESULT LO
+00023  5C00             RH         = $FD  ;RESULT HI
+00024  5C00             ;XTMP     = $E0  ;TEMPORARY FOR X REG
+00025  5C00             ;RL       = $E1  ;RESULT LO
+00026  5C00             ;RH       = $E2  ;RESULT HI
+00027  5C00             
+00028  5C00             SQRL       = $4000 ;LOW BYTES OF: X=(X*X)/4; 512 ENTRY ON 16 BITS
+00029  5C00             SQRH       = $4200 ;HIGH BYTES
+00030  5C00             ABS        = $4400 ;X=ABS(X)
+00031  5C00             ;SQRL     = $2000 ;LOW BYTES OF: X=(X*X)/4; 512 ENTRY ON 16 BITS
+00032  5C00             ;SQRH     = $2200 ;HIGH BYTES
+00033  5C00             ;ABS      = $2400 ;X=ABS(X)
+00034  5C00             
+00035  5C00             
+00036  5C00  78                    SEI; DISABLE INTS SO ZERO PAGE UNMOLESTED
+00037  5C01             
+00038  5C01             MULTIPLY_INIT 
+00039  5C01  20 90 5C              JSR MULGEN    ;TABLE SETUP
+00040  5C04  20 12 5C              JSR MKABS
+00041  5C07  60                    RTS
+00042  5C08             
+00043  5C08             TESTOP
+00044  5C08  A2 10                 LDX #$10
+00045  5C0A  A0 20                 LDY #$20
+00046  5C0C  20 23 5C              JSR MUL      ;A TEST CALL TO THE MULTIPLY SUBROUTINE
+00047  5C0F  4C 0F 5C              JMP *
+00048  5C12                        
+00049  5C12             ;-----------------------------------------------------------
+00050  5C12             
+00051  5C12  A2 00      MKABS      LDX #$00     ;GENERATING A TABLE TO GET THE ABSOLUTE VALUE OF SIGNED NUMBERS
+00052  5C14  8A         ABSLP      TXA
+00053  5C15  10 05                 BPL POS
+00054  5C17  49 FF                 EOR #$FF
+00055  5C19  18                    CLC
+00056  5C1A  69 01                 ADC #$01
+00057  5C1C  9D 00 44   POS        STA ABS,X
+00058  5C1F  CA                    DEX
+00059  5C20  D0 F2                 BNE ABSLP
+00060  5C22  60                    RTS
+00061  5C23             
+00062  5C23             ;THE MULTIPLY ROUTINE ITSELF
+00063  5C23             
+00064  5C23  86 FB      MUL        STX XTMP     ;STORING X FOR LATER USE
+00065  5C25  98                    TYA
+00066  5C26  45 FB                 EOR XTMP     ;GETTING THE SIGN OF THE FINAL PRODUCT
+00067  5C28  30 29                 BMI NEG      ;TAKE ANOTHER ROUTINE IF THE FINAL PRODUCT WILL BE NEGATIVE
+00068  5C2A             
+00069  5C2A             
+00070  5C2A             
+00071  5C2A  BD 00 44              LDA ABS,X    ;THIS IS THE (A+B) PART, WE STRIP A&B FROM THEIR SIGNS USING THE ABS TABLE.
+00072  5C2D  18                    CLC          ;IT IS SAFE TO FORCE BOTH NUMBERS TO BE POSITIVE KNOWING THE FINAL SIGN OF THE PRODUCT WHICH WE WILL SET LATER
+00073  5C2E  79 00 44              ADC ABS,Y    ;THIS IS DONE TO AVOID OVERFLOWS, AND THE EXTRA CODE/TABLES NEEDED TO HANDLE THEM.
+00074  5C31  85 FB                 STA XTMP
+00075  5C33             
+00076  5C33  BD 00 44              LDA ABS,X    ;(ABS(A)-ABS(B))
+00077  5C36  38                    SEC
+00078  5C37  F9 00 44              SBC ABS,Y
+00079  5C3A  A8                    TAY
+00080  5C3B             
+00081  5C3B  BE 00 44              LDX ABS,Y   ;((A-B)/2)^2 WILL BE ALWAYS POSITIVE SO ITS SAFE TO DO ABS(A-B)
+00082  5C3E  A4 FB                 LDY XTMP    ;WE DO THIS SINCE THE SQR TABLE CAN ONLY HANDLE POSITIVE NUMBERS
+00083  5C40             
+00084  5C40             
+00085  5C40                        ;NOW WE HAVE A+B IN Y AND A-B IN X
+00086  5C40             
+00087  5C40             
+00088  5C40                        ;LOW 8 BITS OF THE PRODUCT CALCULATED HERE
+00089  5C40  B9 00 40              LDA SQRL,Y  ;((A+B)/2)^2
+00090  5C43  38                    SEC
+00091  5C44  FD 00 40              SBC SQRL,X  ;-((A-B)/2)^2
+00092  5C47  85 FC                 STA RL
+00093  5C49                        ;SAME AS ABOVE FOR HIGH 8 BITS
+00094  5C49  B9 00 42              LDA SQRH,Y
+00095  5C4C  FD 00 42              SBC SQRH,X
+00096  5C4F  A8                    TAY
+00097  5C50  A6 FC                 LDX RL
+00098  5C52  60                    RTS
+00099  5C53             
+00100  5C53             ;CASE FOR NEGATIVE FINAL PRODUCT, ALL THE SAME EXCEPT INVERTING THE RESULT AT THE END.
+00101  5C53             
+00102  5C53  BD 00 44   NEG        LDA ABS,X
+00103  5C56  18                    CLC
+00104  5C57  79 00 44              ADC ABS,Y
+00105  5C5A  85 FB                 STA XTMP
+00106  5C5C             
+00107  5C5C  BD 00 44              LDA ABS,X
+00108  5C5F  38                    SEC
+00109  5C60  F9 00 44              SBC ABS,Y
+00110  5C63  A8                    TAY
+00111  5C64             
+00112  5C64  BE 00 44              LDX ABS,Y
+00113  5C67  A4 FB                 LDY XTMP
+00114  5C69             
+00115  5C69  B9 00 40              LDA SQRL,Y
+00116  5C6C  38                    SEC
+00117  5C6D  FD 00 40              SBC SQRL,X
+00118  5C70  85 FC                 STA RL
+00119  5C72             
+00120  5C72  B9 00 42              LDA SQRH,Y
+00121  5C75  FD 00 42              SBC SQRH,X
+00122  5C78  85 FD                 STA RH
+00123  5C7A             
+00124  5C7A                        ;INVERTING THE RESULT'S SIGN
+00125  5C7A  A5 FC                 LDA RL
+00126  5C7C  49 FF                 EOR #$FF
+00127  5C7E  18                    CLC
+00128  5C7F  69 01                 ADC #$01
+00129  5C81  85 FC                 STA RL
+00130  5C83  A5 FD                 LDA RH
+00131  5C85  49 FF                 EOR #$FF
+00132  5C87  69 00                 ADC #$00
+00133  5C89  85 FD                 STA RH
+00134  5C8B             
+00135  5C8B  A4 FD                 LDY RH
+00136  5C8D  A6 FC                 LDX RL
+00137  5C8F  60                    RTS
+00138  5C90             
+00139  5C90             ;GENERATING A 16 BIT TABLE WITH 512 ENTRYS WHERE X=(X*X)/4
+00140  5C90             
+00141  5C90  A9 01      MULGEN     LDA #1
+00142  5C92  8D F0 C0              STA $C0F0
+00143  5C95                        ;STA $F0
+00144  5C95  A9 00                 LDA #0
+00145  5C97  8D F1 C0              STA $C0F1
+00146  5C9A                        ;STA $F1
+00147  5C9A             
+00148  5C9A  A9 00                 LDA #0
+00149  5C9C  8D F4 C0              STA $C0F4
+00150  5C9F                        ;STA $F4
+00151  5C9F  8D F5 C0              STA $C0F5
+00152  5CA2                        ;STA $F5
+00153  5CA2  8D F6 C0              STA $C0F6
+00154  5CA5                        ;STA $F6
+00155  5CA5  8D 00 40              STA SQRL
+00156  5CA8  8D 00 42              STA SQRH
+00157  5CAB             
+00158  5CAB  A9 00                 LDA #<SQRH
+00159  5CAD  85 FE                 STA $FE
+00160  5CAF  A9 42                 LDA #>SQRH
+00161  5CB1  85 FF                 STA $FF
+00162  5CB3             
+00163  5CB3  A9 00                 LDA #<SQRL
+00164  5CB5                        ;STA $C0FA
+00165  5CB5  85 FA                 STA $FA
+00166  5CB7  A9 40                 LDA #>SQRL
+00167  5CB9                        ;STA $C0FB
+00168  5CB9  85 FB                 STA $FB
+00169  5CBB             
+00170  5CBB  A2 01                 LDX #$01
+00171  5CBD  A0 01                 LDY #$01
+00172  5CBF             FFV2
+00173  5CBF             
+00174  5CBF             FFV
+00175  5CBF  AD F0 C0              LDA $C0F0
+00176  5CC2                        ;LDA $F0
+00177  5CC2  18                    CLC
+00178  5CC3  6D F4 C0              ADC $C0F4
+00179  5CC6                        ;ADC $F4
+00180  5CC6  8D F4 C0              STA $C0F4
+00181  5CC9                        ;STA $F4
+00182  5CC9             
+00183  5CC9  AD F1 C0              LDA $C0F1
+00184  5CCC                        ;LDA $F1
+00185  5CCC  6D F5 C0              ADC $C0F5
+00186  5CCF                        ;ADC $F5
+00187  5CCF  8D F5 C0              STA $C0F5
+00188  5CD2                        ;STA $F5
+00189  5CD2             
+00190  5CD2  AD F6 C0              LDA $C0F6
+00191  5CD5                        ;LDA $F6
+00192  5CD5  69 00                 ADC #$00
+00193  5CD7  8D F6 C0              STA $C0F6
+00194  5CDA                        ;STA $F6
+00195  5CDA             
+00196  5CDA  AD F6 C0              LDA $C0F6
+00197  5CDD                        ;LDA $F6
+00198  5CDD  8D B2 C0              STA $C0B2
+00199  5CE0                        ;STA $B2
+00200  5CE0  AD F5 C0              LDA $C0F5
+00201  5CE3                        ;LDA $F5
+00202  5CE3  8D B1 C0              STA $C0B1
+00203  5CE6                        ;STA $B1
+00204  5CE6  AD F4 C0              LDA $C0F4
+00205  5CE9                        ;LDA $F4
+00206  5CE9  8D B0 C0              STA $C0B0
+00207  5CEC                        ;STA $B0
+00208  5CEC             
+00209  5CEC  4E B2 C0              LSR $C0B2
+00210  5CEF                        ;LSR $B2
+00211  5CEF  6E B1 C0              ROR $C0B1
+00212  5CF2                        ;ROR $B1
+00213  5CF2  6E B0 C0              ROR $C0B0
+00214  5CF5                        ;ROR $B0
+00215  5CF5             
+00216  5CF5  4E B2 C0              LSR $C0B2
+00217  5CF8                        ;LSR $B2
+00218  5CF8  6E B1 C0              ROR $C0B1
+00219  5CFB                        ;ROR $B1
+00220  5CFB  6E B0 C0              ROR $C0B0
+00221  5CFE                        ;ROR $B0
+00222  5CFE             
+00223  5CFE  AD B0 C0              LDA $C0B0
+00224  5D01                        ;LDA $B0
+00225  5D01                        ;STA ($C0FA),Y
+00226  5D01  91 FA                 STA ($FA),Y
+00227  5D03  AD B1 C0              LDA $C0B1
+00228  5D06                        ;LDA $B1
+00229  5D06  91 FE                 STA ($FE),Y
+00230  5D08             
+00231  5D08  AD F0 C0              LDA $C0F0
+00232  5D0B                        ;LDA $F0
+00233  5D0B  18                    CLC
+00234  5D0C  69 02                 ADC #2
+00235  5D0E  8D F0 C0              STA $C0F0
+00236  5D11                        ;STA $F0
+00237  5D11  90 03                 BCC THERE
+00238  5D13                        ;BCC *+4
+00239  5D13  EE F1 C0              INC $C0F1
+00240  5D16                        ;INC $F1
+00241  5D16             
+00242  5D16             
+00243  5D16  C8         THERE      INY
+00244  5D17  D0 A6                 BNE FFV
+00245  5D19             
+00246  5D19  A0 00                 LDY #$00
+00247  5D1B  E6 FF                 INC $FF
+00248  5D1D  E6 FB                 INC $FB
+00249  5D1F                        ;INC $C0FB
+00250  5D1F  CA                    DEX
+00251  5D20  10 9D                 BPL FFV2
+00252  5D22             
+00253  5D22  60                    RTS
+00254  5D23             
+00255  5D23             
+
+******* 11 Label(s) *******
+ABSLP = $5C14 
+FFV = $5CBF 
+FFV2 = $5CBF 
+MKABS = $5C12 
+MUL = $5C23 
+MULGEN = $5C90 
+multiply_init = $5C01 
+NEG = $5C53 
+POS = $5C1C 
+testop = $5C08 
+there = $5D16 
+
+******* 2 Unused label(s) *******
+multiply_init
+testop
+
+******* 7 Variable(s) *******
+ABS  = $4400
+RH  = $00FD
+RL  = $00FC
+SQRH  = $4200
+SQRL  = $4000
+tgt_c64  = $0001
+XTMP  = $00FB
+******* 2 Unused variables(s) *******
+ABS
+tgt_c64
+

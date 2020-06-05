@@ -1,0 +1,229 @@
+00001  0000             
+00002  0001             
+00003  0001             
+00004  0001             *=$5A00    ; 0X104 BYTES LONG
+00005  5A00             
+00006  5A00             HIRES_END
+00007  5A00  AD 11 D0              LDA 53265
+00008  5A03  29 DF                 AND #$DF
+00009  5A05  8D 11 D0              STA 53265
+00010  5A08             
+00011  5A08  AD 18 D0              LDA 53272
+00012  5A0B  29 F7                 AND #$F7
+00013  5A0D  8D 18 D0              STA 53272
+00014  5A10             
+00015  5A10  60                    RTS
+00016  5A11             
+00017  5A11             ; HIRES DRAWING ROUTINE!
+00018  5A11             
+00019  5A11             HPLOTXY
+00020  5A11  8E 52 5A              STX COORD
+00021  5A14  8C 53 5A              STY COORD+1
+00022  5A17             
+00023  5A17                        ;GET BASE ADDR FROM TABLE
+00024  5A17  AD 53 5A              LDA COORD+1
+00025  5A1A  4A                    LSR
+00026  5A1B  4A                    LSR
+00027  5A1C  29 3E                 AND #$3E
+00028  5A1E  A8                    TAY
+00029  5A1F  B9 55 5A              LDA TABLE1,Y
+00030  5A22  8D 49 5A              STA READ_PIX+1
+00031  5A25  8D 4F 5A              STA WRITE_PIX+1
+00032  5A28  B9 56 5A              LDA TABLE1+1,Y
+00033  5A2B  8D 4A 5A              STA READ_PIX+2
+00034  5A2E  8D 50 5A              STA WRITE_PIX+2
+00035  5A31             
+00036  5A31                        ; GENERATE OFFSET
+00037  5A31  AD 53 5A              LDA COORD+1
+00038  5A34  29 07                 AND #$07
+00039  5A36  8D 54 5A              STA TMP
+00040  5A39  AD 52 5A              LDA COORD
+00041  5A3C  29 F8                 AND #$F8
+00042  5A3E  0D 54 5A              ORA TMP
+00043  5A41  AA                    TAX
+00044  5A42             
+00045  5A42                        ; GENERATE BITMSK
+00046  5A42  AD 52 5A              LDA COORD
+00047  5A45  29 07                 AND #$07
+00048  5A47  A8                    TAY
+00049  5A48             
+00050  5A48                        ; PERFORM SCREEN UPDATE
+00051  5A48             READ_PIX
+00052  5A48  BD A0 20              LDA $20A0,X
+00053  5A4B  19 87 5A              ORA TABLE2,Y
+00054  5A4E             WRITE_PIX
+00055  5A4E  9D A0 20              STA $20A0,X
+00056  5A51                        
+00057  5A51  60                    RTS
+00058  5A52             
+00059  5A52             COORD
+00060  5A52  60 32                 BYTE 96, 50
+00061  5A54             
+00062  5A54             TMP
+00063  5A54  00                    BYTE 0
+00064  5A55             
+00065  5A55             
+00066  5A55             ; START ADDRESS OF THE 25 ROWS
+00067  5A55             
+00068  5A55             ; SHIFTED RIGHT BY 32 + 128 = 160 PIXELS TO MID-SCREEN
+00069  5A55             ; FOR USE WITH SIGNED 7-BIT NUMBERS
+00070  5A55             
+00071  5A55             
+00072  5A55             ; ROW STARTS
+00073  5A55             ; SHIFTED TO RIGHT BY 32 BYTES (32PIX) TO CENTER 256 PIXEL IMAGE
+00074  5A55             TABLE1
+00075  5A55  20 20 60              BYTE $2020, $2160, $22A0, $23E0
+00076  5A5D  20 25 60              BYTE $2520, $2660, $27A0, $28E0
+00077  5A65  20 2A 60              BYTE $2A20, $2B60, $2CA0, $2DE0
+00078  5A6D  20 2F 60              BYTE $2F20, $3060, $31A0, $32E0
+00079  5A75  20 34 60              BYTE $3420, $3560, $36A0, $37E0
+00080  5A7D  20 39 60              BYTE $3920, $3A60, $3BA0, $3CE0
+00081  5A85  20 3E                 BYTE $3E20
+00082  5A87             TABLE2
+00083  5A87  80 40 20              BYTE $80, $40, $20, $10, $08, $04, $02, $01
+00084  5A8F             
+00085  5A8F             
+00086  5A8F             
+00087  5A8F             
+00088  5A8F             HIRES_START 
+00089  5A8F                        ; SWITCH TO HIRES MODE
+00090  5A8F  AD 11 D0              LDA 53265
+00091  5A92  09 20                 ORA #$20
+00092  5A94  8D 11 D0              STA 53265
+00093  5A97             
+00094  5A97  AD 18 D0              LDA 53272
+00095  5A9A  09 08                 ORA #$08
+00096  5A9C  8D 18 D0              STA 53272
+00097  5A9F             
+00098  5A9F  60                    RTS
+00099  5AA0             
+00100  5AA0             
+00101  5AA0             
+00102  5AA0             SCRN_CLR_COLOR 
+00103  5AA0  50                    BYTE $50
+00104  5AA1             
+00105  5AA1             HIRES_CLEAR 
+00106  5AA1                        ; CLEAR SCREEN
+00107  5AA1  A2 00                 LDX #$00
+00108  5AA3             SCRN_CLR
+00109  5AA3  AD A0 5A              LDA SCRN_CLR_COLOR
+00110  5AA6                        ;LDA #$10
+00111  5AA6  9D 00 04              STA $0400,X
+00112  5AA9  9D 00 05              STA $0500,X
+00113  5AAC  9D 00 06              STA $0600,X
+00114  5AAF  9D 00 07              STA $0700,X
+00115  5AB2             
+00116  5AB2  A9 00                 LDA #$00
+00117  5AB4  9D 00 20              STA $2000,X
+00118  5AB7  9D 00 21              STA $2100,X
+00119  5ABA  9D 00 22              STA $2200,X
+00120  5ABD  9D 00 23              STA $2300,X
+00121  5AC0  9D 00 24              STA $2400,X
+00122  5AC3  9D 00 25              STA $2500,X
+00123  5AC6  9D 00 26              STA $2600,X
+00124  5AC9  9D 00 27              STA $2700,X
+00125  5ACC  9D 00 28              STA $2800,X
+00126  5ACF  9D 00 29              STA $2900,X
+00127  5AD2  9D 00 2A              STA $2A00,X
+00128  5AD5  9D 00 2B              STA $2B00,X
+00129  5AD8  9D 00 2C              STA $2C00,X
+00130  5ADB  9D 00 2D              STA $2D00,X
+00131  5ADE  9D 00 2E              STA $2E00,X
+00132  5AE1  9D 00 2F              STA $2F00,X
+00133  5AE4  9D 00 30              STA $3000,X
+00134  5AE7  9D 00 31              STA $3100,X
+00135  5AEA  9D 00 32              STA $3200,X
+00136  5AED  9D 00 33              STA $3300,X
+00137  5AF0  9D 00 34              STA $3400,X
+00138  5AF3  9D 00 35              STA $3500,X
+00139  5AF6  9D 00 36              STA $3600,X
+00140  5AF9  9D 00 37              STA $3700,X
+00141  5AFC  9D 00 38              STA $3800,X
+00142  5AFF  9D 00 39              STA $3900,X
+00143  5B02  9D 00 3A              STA $3A00,X
+00144  5B05  9D 00 3B              STA $3B00,X
+00145  5B08  9D 00 3C              STA $3C00,X
+00146  5B0B  9D 00 3D              STA $3D00,X
+00147  5B0E  9D 00 3E              STA $3E00,X
+00148  5B11  9D 00 3F              STA $3F00,X
+00149  5B14  CA                    DEX
+00150  5B15  D0 8C                 BNE SCRN_CLR
+00151  5B17                        
+00152  5B17  60                    RTS
+00153  5B18             
+00154  5B18             
+00155  5B18             
+00156  5B18             ERASING_01 
+00157  5B18  AE 12 D0              LDX $D012
+00158  5B1B  8E 21 5B              STX ERASE_ME+1
+00159  5B1E             
+00160  5B1E  A9 00                 LDA #$00
+00161  5B20             ERASE_ME
+00162  5B20  9D 00 20              STA $2000,X
+00163  5B23  9D 00 21              STA $2100,X
+00164  5B26  9D 00 22              STA $2200,X
+00165  5B29  9D 00 23              STA $2300,X
+00166  5B2C  9D 00 24              STA $2400,X
+00167  5B2F  9D 00 25              STA $2500,X
+00168  5B32  9D 00 26              STA $2600,X
+00169  5B35  9D 00 27              STA $2700,X
+00170  5B38  9D 00 28              STA $2800,X
+00171  5B3B  9D 00 29              STA $2900,X
+00172  5B3E  9D 00 2A              STA $2A00,X
+00173  5B41  9D 00 2B              STA $2B00,X
+00174  5B44  9D 00 2C              STA $2C00,X
+00175  5B47  9D 00 2D              STA $2D00,X
+00176  5B4A  9D 00 2E              STA $2E00,X
+00177  5B4D  9D 00 2F              STA $2F00,X
+00178  5B50  9D 00 30              STA $3000,X
+00179  5B53  9D 00 31              STA $3100,X
+00180  5B56  9D 00 32              STA $3200,X
+00181  5B59  9D 00 33              STA $3300,X
+00182  5B5C  9D 00 34              STA $3400,X
+00183  5B5F  9D 00 35              STA $3500,X
+00184  5B62  9D 00 36              STA $3600,X
+00185  5B65  9D 00 37              STA $3700,X
+00186  5B68  9D 00 38              STA $3800,X
+00187  5B6B  9D 00 39              STA $3900,X
+00188  5B6E  9D 00 3A              STA $3A00,X
+00189  5B71  9D 00 3B              STA $3B00,X
+00190  5B74  9D 00 3C              STA $3C00,X
+00191  5B77  9D 00 3D              STA $3D00,X
+00192  5B7A  9D 00 3E              STA $3E00,X
+00193  5B7D  9D 00 3F              STA $3F00,X
+00194  5B80             
+00195  5B80  60                    RTS
+00196  5B81             
+00197  5B81             
+
+******* 14 Label(s) *******
+coord = $5A52 
+erase_me = $5B20 
+erasing_01 = $5B18 
+hires_clear = $5AA1 
+hires_end = $5A00 
+hires_start = $5A8F 
+hplotxy = $5A11 
+read_pix = $5A48 
+scrn_clr = $5AA3 
+scrn_clr_color = $5AA0 
+table1 = $5A55 
+table2 = $5A87 
+tmp = $5A54 
+write_pix = $5A4E 
+
+******* 8 Unused label(s) *******
+erase_me
+erasing_01
+hires_clear
+hires_end
+hires_start
+hplotxy
+read_pix
+write_pix
+
+******* 1 Variable(s) *******
+tgt_c64  = $0001
+******* 1 Unused variables(s) *******
+tgt_c64
+
