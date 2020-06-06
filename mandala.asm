@@ -22,25 +22,25 @@ scrn_clr_byte
 old_base_angle_add ; not used anymore
         byte $00
 plot_color
-        byte $25
+        byte $25   ; s+11
 
 ; new school
 angle
-        byte 0,0
+        byte 0,0   ; 12,13
 angle_delta
-        byte 0,0
+        byte 0,0   ; 14,15
 radius
-        byte 0,0
+        byte 0,0   ; 15,16
 radius_delta
-        byte 0,0
+        byte 0,0   ; 17,18
 angle_ratchet
-        byte 0
+        byte 0   ; 19
 radius_ratchet
-        byte 0
+        byte 0   ; 20
 radius_delta2
-        byte 0,0
+        byte 0,0   ; 21,22
 angle_delta2
-        byte 0,0
+        byte 0,0   ; 23,24
 
 *=$5920
 mandala
