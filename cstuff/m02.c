@@ -35,9 +35,9 @@ int main ()
   hires_clear  = (void*)0x5018;
   scrn_clr     = (void*)0x5020;
   
-  *scrn_clr_color   = 0x01;  // upper nybble is set color, up = set
-  *scrn_clr_byte    = 0x00;  // lower nybble is color & val?
-  *plot_color       = 0x50;
+  *scrn_clr_byte    = 0x55;  // used in hires_clear
+  *scrn_clr_color   = 0x01;  // used in color_map clear
+  *plot_color       = 0x20;  // high nybble is set col, low nybble clear
   
   *points_count     = 0;
   *(points_count+1) = 50;
@@ -64,8 +64,8 @@ int main ()
   
   *angle_bump        = 1;  // adds at end of each iteration
 
-  (*scrn_clr)();    // text screen, uses scrn_clr_col?
-  (*hires_clear)(); // hires screen, uses scrn_clr_byte?
+  (*scrn_clr)();    // text screen, uses scrn_clr_color
+  (*hires_clear)(); // hires screen, uses scrn_clr_byte
   (*demo_main)();   // multiply init, hires_start
   
 
@@ -78,10 +78,14 @@ int main ()
     //*scrn_clr_color++;
     //*scrn_clr_byte++;
     //*scrn_clr_byte    = 0;
-    //(*hires_clear)();
+    (*hires_clear)();
     //*angle_delta++;
     (*mandala_draw)();
-    *plot_color += 0x11;
+    *plot_color = 0x60;
+    (*mandala_draw)();
+    *plot_color = 0x70;
+    (*mandala_draw)();
+    *plot_color = 0x80;
     //(*scrn_clr)();
   }
   

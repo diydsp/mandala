@@ -139,7 +139,7 @@ tab_scr
         byte $cdE4, $ce0c, $ce34, $ce5c
         byte $ce84, $ceAc, $ceD4, $ceFc
         byte $cf24, $cf4c, $cf74, $cf9c
-        byte $cf9c
+        byte $cfc4
 
 ;     byte $414, $43c, $464, $48c
 ;       byte $4b4, $4dc, $504, $52c
@@ -184,14 +184,13 @@ hires_start
 
 ; fill text screen with scrn_clr_color
 scrn_clr
-        ldx #$e0
-        ldx #$e7
+        ldx #$00
         lda scrn_clr_color
 scrn_clr_loo
         sta $cc00,x
-        sta $cd00,x
-        sta $ce00,x
-        sta $cf00,x
+        sta $ccfa,x
+        sta $cdf4,x
+        sta $ceee,x
         dex
         bne scrn_clr_loo
         rts
