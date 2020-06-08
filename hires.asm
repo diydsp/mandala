@@ -1,38 +1,38 @@
 
 
 
-*=$b000
+*=$9000
 
 into_hires
         jsr hires_start
         rts
-*=$b008
+*=$9008
         lda scrn_clr_color
         jsr scrn_clr
         rts
 
-*=$b010
+*=$9010
 init_things
         jsr multiply_init
         rts
 
-*=$b018
+*=$9018
         jsr hires_clear
         rts
 
-*=$b020
+*=$9020
         jsr scrn_clr
         rts
 
-*=$b028
+*=$9028
         jsr hplot_set_mode
         rts
 
-*=$b030
+*=$9030
         jsr hplot_unset_mode
         rts
 
-*=$ba00   ; 0x104 bytes long
+*=$9a00   ; 0x104 bytes long
 
 hires_end
         lda 53265
@@ -231,38 +231,38 @@ hires_clear
         lda scrn_clr_byte
 
 hires_clear_lp
-        sta $e000,x
-        sta $e100,x
-        sta $e200,x
-        sta $e300,x
-        sta $e400,x
-        sta $e500,x
-        sta $e600,x
-        sta $e700,x
-        sta $e800,x
-        sta $e900,x
-        sta $ea00,x
-        sta $eb00,x
-        sta $ec00,x
-        sta $ed00,x
-        sta $ee00,x
-        sta $ef00,x
-        sta $f000,x
-        sta $f100,x
-        sta $f200,x
-        sta $f300,x
-        sta $f400,x
-        sta $f500,x
-        sta $f600,x
-        sta $f700,x
-        sta $f800,x
-        sta $f900,x
-        sta $fa00,x
-        sta $fb00,x
-        sta $fc00,x
-        sta $fd00,x
-        sta $fe00,x
-        sta $ff00,x
+        sta $4000,x
+        sta $4100,x
+        sta $4200,x
+        sta $4300,x
+        sta $4400,x
+        sta $4500,x
+        sta $4600,x
+        sta $4700,x
+        sta $4800,x
+        sta $4900,x
+        sta $4a00,x
+        sta $4b00,x
+        sta $4c00,x
+        sta $4d00,x
+        sta $4e00,x
+        sta $4f00,x
+        sta $5000,x
+        sta $5100,x
+        sta $5200,x
+        sta $5300,x
+        sta $5400,x
+        sta $5500,x
+        sta $5600,x
+        sta $5700,x
+        sta $5800,x
+        sta $5900,x
+        sta $5a00,x
+        sta $5b00,x
+        sta $5c00,x
+        sta $5d00,x
+        sta $5e00,x
+        sta $5f00,x
         dex
         bne hires_clear_lp
         

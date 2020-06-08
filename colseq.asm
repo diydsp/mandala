@@ -1,4 +1,4 @@
-*=$b500
+*=$9500
 
 ; not perfect, needs some work when x is near 0.
 col_next

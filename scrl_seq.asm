@@ -1,4 +1,4 @@
-*=$b400
+*=$9400
 
 scrl_seq_base_init
 ; scroll seq parameters

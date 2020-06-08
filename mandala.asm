@@ -1,6 +1,6 @@
 
 
-*=$b900
+*=$9900
 
 
 my_xy
@@ -42,7 +42,7 @@ radius_delta2
 angle_delta2
         byte 0,0   ; 23,24
 
-*=$b920
+*=$9920
 mandala
 
         lda angle
@@ -139,7 +139,7 @@ radius_delta_incr
         sta angle
         sta angle_tmp
         rts
-*=$b9d0
+*=$99d0
 radius_delta2_incr
         clc
         lda radius+1
