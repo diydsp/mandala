@@ -1,38 +1,38 @@
 
 
 
-*=$5000
+*=$b000
 
 into_hires
         jsr hires_start
         rts
-*=$5008
+*=$b008
         lda scrn_clr_color
         jsr scrn_clr
         rts
 
-*=$5010
+*=$b010
 init_things
         jsr multiply_init
         rts
 
-*=$5018
+*=$b018
         jsr hires_clear
         rts
 
-*=$5020
+*=$b020
         jsr scrn_clr
         rts
 
-*=$5028
+*=$b028
         jsr hplot_set_mode
         rts
 
-*=$5030
+*=$b030
         jsr hplot_unset_mode
         rts
 
-*=$5a00   ; 0x104 bytes long
+*=$ba00   ; 0x104 bytes long
 
 hires_end
         lda 53265
@@ -148,13 +148,13 @@ tmp
 ; row starts of hires screen
 ; shifted to right by 32 bytes (32pix) to center 256 pixel image
 table1
-        byte $e020, $e160, $e2a0, $e3e0
-        byte $e520, $e660, $e7a0, $e8e0
-        byte $eA20, $eB60, $eCa0, $eDe0
-        byte $eF20, $f060, $f1a0, $f2e0
-        byte $f420, $f560, $f6a0, $f7e0
-        byte $f920, $fA60, $fBa0, $fCe0
-        byte $fe20
+        byte $4020, $4160, $42a0, $43e0
+        byte $4520, $4660, $47a0, $48e0
+        byte $4A20, $4B60, $4Ca0, $4De0
+        byte $4F20, $5060, $51a0, $52e0
+        byte $5420, $5560, $56a0, $57e0
+        byte $5920, $5A60, $5Ba0, $5Ce0
+        byte $5e20
 table2
         byte $80, $40, $20, $10, $08, $04, $02, $01  ; foregronud
 table3
@@ -162,13 +162,13 @@ table3
 
 ; text screen for color memory in bitmap mode
 tab_scr        
-        byte $cc04, $cc2c, $cc54, $cc7c
-        byte $ccA4, $ccCc, $ccF4, $cd1c
-        byte $cd44, $cd6c, $cd94, $cdBc
-        byte $cdE4, $ce0c, $ce34, $ce5c
-        byte $ce84, $ceAc, $ceD4, $ceFc
-        byte $cf24, $cf4c, $cf74, $cf9c
-        byte $cfc4
+        byte $6004, $602c, $6054, $607c
+        byte $60A4, $60Cc, $60F4, $611c
+        byte $6144, $616c, $6194, $61Bc
+        byte $61E4, $620c, $6234, $625c
+        byte $6284, $62Ac, $62D4, $62Fc
+        byte $6324, $634c, $6374, $639c
+        byte $63c4
 
 ;     byte $414, $43c, $464, $48c
 ;       byte $4b4, $4dc, $504, $52c
@@ -181,17 +181,17 @@ tab_scr
 hires_start
 
 
-        ; set the vic base address to $c000
+        ; set the vic base address to $4000
         lda $dd00
         and #$fc
-        ora #$00   ; page 0= $c000
+        ora #$02   ;  $4000
         sta $dd00
 
-        ; set the VM13 bit in $d018, (53272) memory points
-        ; bitmap at $e000
+        ;  VM13 bit in $d018, (53272) memory points
+        ; bitmap at $400
         ; screenmem (for colors) at $cc00
         lda $d018
-        lda #$38
+        lda #$80
         sta $d018
         
 
@@ -216,10 +216,10 @@ scrn_clr
         ldx #$00
         lda scrn_clr_color
 scrn_clr_loo
-        sta $cc00,x
-        sta $ccfa,x
-        sta $cdf4,x
-        sta $ceee,x
+        sta $6000,x
+        sta $60fa,x
+        sta $61f4,x
+        sta $62ee,x
         dex
         bne scrn_clr_loo
         rts

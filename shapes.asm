@@ -1,4 +1,4 @@
-*=$5600
+*=$b600
 
 
 ; s+14 = $590e
@@ -6,12 +6,12 @@
 ; s+18 = $5912
 ; s+19 = $5913
 
-ANG_DELT   = $590e
-ANG_DELT_L = $590f
-RAD_DELT   = $5912
-RAD_DELT_L = $5913
+ANG_DELT   = $b90e
+ANG_DELT_L = $b90f
+RAD_DELT   = $b912
+RAD_DELT_L = $b913
 
-MANDALA_DRAW    = $5920
+MANDALA_DRAW    = $b920
 
 shape_square
         jsr shape_out

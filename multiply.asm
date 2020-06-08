@@ -1,7 +1,7 @@
 
 
 
-*=$5c00
+*=$bc00
 
 
 
@@ -25,9 +25,9 @@ RH       = $fd  ;result hi
 ;RL       = $e1  ;result lo
 ;RH       = $e2  ;result hi
 
-SQRL     = $4000 ;low bytes of: x=(x*x)/4; 512 entry on 16 bits
-SQRH     = $4200 ;high bytes
-ABS      = $4400 ;x=abs(x)
+SQRL     = $e000 ;low bytes of: x=(x*x)/4; 512 entry on 16 bits
+SQRH     = $e200 ;high bytes
+ABS      = $e400 ;x=abs(x)
 ;SQRL     = $2000 ;low bytes of: x=(x*x)/4; 512 entry on 16 bits
 ;SQRH     = $2200 ;high bytes
 ;ABS      = $2400 ;x=abs(x)

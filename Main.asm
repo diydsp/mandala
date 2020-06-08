@@ -11,9 +11,8 @@
 
 main
         sei
-        jsr multiply_init
-
         jsr hires_start
+        jsr multiply_init
         rts
 
         lda #$06

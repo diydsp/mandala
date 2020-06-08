@@ -16,7 +16,7 @@ void (*scrn_clr)( void );
 void (*hplot_set_mode)( void );
 void (*hplot_unset_mode)( void );
   
-uint8_t *mandala_base = (uint8_t*)0x5900;  // mandala_base
+uint8_t *mandala_base = (uint8_t*)0xb900;  // mandala_base
 uint8_t *angle_bump     ;
 uint8_t *points_count   ;
 uint8_t *iters_count    ;
@@ -37,13 +37,13 @@ uint8_t *border_col     = (uint8_t *)0xd020;
 void funcs_init( void )
 {
   demo_main        = (void*)0xc000;
-  mandala_draw     = (void*)0x5920;
-  hires_clear      = (void*)0x5018;
-  scrn_clr         = (void*)0x5020;
-  hplot_set_mode   = (void*)0x5028;
-  hplot_unset_mode = (void*)0x5030;
+  mandala_draw     = (void*)0xb920;
+  hires_clear      = (void*)0xb018;
+  scrn_clr         = (void*)0xb020;
+  hplot_set_mode   = (void*)0xb028;
+  hplot_unset_mode = (void*)0xb030;
 
-  mandala_base = (uint8_t*)0x5900;  // mandala_base
+  mandala_base = (uint8_t*)0xb900;  // mandala_base
   angle_bump     = mandala_base + 3;
   points_count   = mandala_base + 4;
   iters_count    = mandala_base + 6;
@@ -110,12 +110,14 @@ void simple_spiral( void )
       (*hplot_set_mode)();
       *angle =0;
       *radius=50;
-      (*mandala_draw)();
+      //(*mandala_draw)();
+      mandala_draw();
 
       (*hplot_unset_mode)();
       *angle =0;
       *radius=50;
-      (*mandala_draw)();
+      mandala_draw();
+      //(*mandala_draw)();
       //(*hires_clear)();
     }
     *plot_color += 0x10;
@@ -140,9 +142,9 @@ int main ()
 
   basic_config();  // starting config
 
-  (*scrn_clr)();    // text screen, uses scrn_clr_color
-  (*hires_clear)(); // hires screen, uses scrn_clr_byte
-  (*demo_main)();   // multiply init, hires_start
+  scrn_clr();    // text screen, uses scrn_clr_color
+  hires_clear(); // hires screen, uses scrn_clr_byte
+  demo_main();   // multiply init, hires_start
 
   while( 1 ) {
     simple_spiral();
