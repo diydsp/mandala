@@ -11,6 +11,14 @@
 
 main
         sei
+        lda $dc0e
+        and #$fe
+        sta $dc0e   ; disable timer interrupt
+
+        jsr song_irq_start
+wait_here
+        jmp wait_here
+        
         jsr hires_start
         jsr multiply_init
         rts
@@ -31,8 +39,6 @@ refill_screen
 
         jsr mandala_test
 
-wait_here
-        jmp wait_here
         jmp refill_screen
 
 fill_val
