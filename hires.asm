@@ -24,6 +24,13 @@ init_things
         jsr scrn_clr
         rts
 
+*=$5028
+        jsr hplot_set_mode
+        rts
+
+*=$5030
+        jsr hplot_unset_mode
+        rts
 
 *=$5a00   ; 0x104 bytes long
 
@@ -62,13 +69,32 @@ write_col
         sta $ffff,x
         rts
 
-; hires drawing routine!
+; config hplotxy to set or unset value
+hplot_set_mode ; default, turns pix on via: ora table2,y
+        lda #$19
+        sta read_pix+3  ; opcode ora $xxxx,y
+        lda #<table2
+        sta read_pix+4  ; table2 lo byte
+        lda #>table2
+        sta read_pix+5  ; table2 hi byte
+        rts
 
+hplot_unset_mode  ; turns pix off via: and table3,y
+        lda #$39
+        sta read_pix+3  ; opcode and $xxxx,y
+        lda #<table3
+        sta read_pix+4  ; table2 lo byte
+        lda #>table3
+        sta read_pix+5  ; table2 hi byte
+        rts
+
+; hires drawing routine!
 hplotxy
         stx coord
         sty coord+1
 
         jsr hcol_plot  ; fill in the color portion!
+        ldx coord
 
         ;get base addr from table
         lda coord+1
@@ -118,6 +144,7 @@ tmp
 ; shifted right by 32 + 128 = 160 pixels to mid-screen
 ; for use with signed 7-bit numbers
 
+
 ; row starts of hires screen
 ; shifted to right by 32 bytes (32pix) to center 256 pixel image
 table1
@@ -129,7 +156,9 @@ table1
         byte $f920, $fA60, $fBa0, $fCe0
         byte $fe20
 table2
-        byte $80, $40, $20, $10, $08, $04, $02, $01
+        byte $80, $40, $20, $10, $08, $04, $02, $01  ; foregronud
+table3
+        byte $7f, $bf, $df, $ef, $f7, $fb, $fd, $fe  ; background
 
 ; text screen for color memory in bitmap mode
 tab_scr        
@@ -247,38 +276,38 @@ erasing_01
 
         lda #$00
 erase_me
-        sta $a000,x
-        sta $a100,x
-        sta $a200,x
-        sta $a300,x
-        sta $a400,x
-        sta $a500,x
-        sta $a600,x
-        sta $a700,x
-        sta $a800,x
-        sta $a900,x
-        sta $aa00,x
-        sta $ab00,x
-        sta $ac00,x
-        sta $ad00,x
-        sta $ae00,x
-        sta $af00,x
-        sta $b000,x
-        sta $b100,x
-        sta $b200,x
-        sta $b300,x
-        sta $b400,x
-        sta $b500,x
-        sta $b600,x
-        sta $b700,x
-        sta $b800,x
-        sta $b900,x
-        sta $ba00,x
-        sta $bb00,x
-        sta $bc00,x
-        sta $bd00,x
-        sta $be00,x
-        sta $bf00,x
+        ;sta $a000,x
+        ;sta $a100,x
+        ;sta $a200,x
+        ;sta $a300,x
+        ;sta $a400,x
+        ;sta $a500,x
+        ;sta $a600,x
+        ;sta $a700,x
+        ;sta $a800,x
+        ;sta $a900,x
+        ;sta $aa00,x
+        ;sta $ab00,x
+        ;sta $ac00,x
+        ;sta $ad00,x
+        ;sta $ae00,x
+        ;sta $af00,x
+        ;sta $b000,x
+        ;sta $b100,x
+        ;sta $b200,x
+        ;sta $b300,x
+        ;sta $b400,x
+        ;sta $b500,x
+        ;sta $b600,x
+        ;sta $b700,x
+        ;sta $b800,x
+        ;sta $b900,x
+        ;sta $ba00,x
+        ;sta $bb00,x
+        ;sta $bc00,x
+        ;sta $bd00,x
+        ;sta $be00,x
+        ;sta $bf00,x
 
         rts
 

@@ -14,7 +14,9 @@ int main ()
   void (*mandala_draw)( void );
   void (*hires_clear)( void );
   void (*scrn_clr)( void );
-
+  void (*hplot_set_mode)( void );
+  void (*hplot_unset_mode)( void );
+  
   uint8_t *mandala_base = (uint8_t*)0x5900;  // mandala_base
   uint8_t *angle_bump     = mandala_base + 3;
   uint8_t *points_count   = mandala_base + 4;
@@ -32,24 +34,27 @@ int main ()
   uint8_t *radius_delta2  = mandala_base + 23;
 
   uint8_t *border_col     = (uint8_t *)0xd020;
+  uint8_t m1,m2;
   uint8_t temp;
   
   __asm__  ("sei");
    
-  demo_main    = (void*)0xc000;
-  mandala_draw = (void*)0x5920;
-  hires_clear  = (void*)0x5018;
-  scrn_clr     = (void*)0x5020;
-
+  demo_main        = (void*)0xc000;
+  mandala_draw     = (void*)0x5920;
+  hires_clear      = (void*)0x5018;
+  scrn_clr         = (void*)0x5020;
+  hplot_set_mode   = (void*)0x5028;
+  hplot_unset_mode = (void*)0x5030;
+  
   *border_col       = 0x00;
   *scrn_clr_byte    = 0x00;  // used in hires_clear
   *scrn_clr_color   = 0x00;  // used in color_map clear
   *plot_color       = 0x10;  // high nybble is set col, low nybble clear
   
   *points_count     = 0;
-  *(points_count+1) = 40;
+  *(points_count+1) = 10;
   *iters_count      = 0;
-  *(iters_count+1)  = 20;
+  *(iters_count+1)  = 10;
   
   *angle            = 0;
   *(angle+1)        = 0;
@@ -58,18 +63,18 @@ int main ()
   
   *angle_delta      = 1;
   *(angle_delta+1)  = 0;
-  *radius_delta     = -1;  // per point
+  *radius_delta     = 1;  // per point
   *(radius_delta+1) = 0;
 
-  *angle_ratchet    = 0;
-  *radius_ratchet   = 3;  // draw the next ones wit this delta
+  *angle_ratchet    = 5;
+  *radius_ratchet   = 10;  // draw the next ones wit this delta
 
   *angle_delta2      = 0;
   *(angle_delta2+1)  = 0;
   *radius_delta2     = 0;
   *(radius_delta2+1) = 0;
   
-  *angle_bump        = 0;  // adds at end of each iteration
+  *angle_bump        = 5;  // adds at end of each iteration
 
   (*scrn_clr)();    // text screen, uses scrn_clr_color
   (*hires_clear)(); // hires screen, uses scrn_clr_byte
@@ -78,15 +83,24 @@ int main ()
 
   while( 1 )
   {
-    (*hires_clear)();
-    (*mandala_draw)();
-    *plot_color += 0x10;
-  }
+    for(m1 = 0;m1<10;m1++){
+      for(m2=0;m2<10;m2++){
+	*angle_delta = m1;
+	*radius_delta = m2;
+	(*hplot_set_mode)();
+	*angle =0;
+	*radius=80;
+	(*mandala_draw)();
 
-  while( 1 )
-  {
-    //temp = *plot_color;
-    //*plot_color = temp + 1;
+	(*hplot_unset_mode)();
+	*angle =0;
+	*radius=80;
+	(*mandala_draw)();
+	//(*hires_clear)();
+      }
+      *plot_color += 0x10;
+    }
+      
     //*angle=0;
     //*radius = 150;
     //*scrn_clr_color++;
@@ -94,16 +108,7 @@ int main ()
     //*scrn_clr_color++;
     //*scrn_clr_byte++;
     //*scrn_clr_byte    = 0;
-    (*hires_clear)();
     //*angle_delta++;
-    //(*mandala_draw)();
-    //*plot_color = 0x60;
-    //(*mandala_draw)();
-    //*plot_color = 0x30;
-    //*plot_color = 0x20;
-    (*mandala_draw)();
-    //(*scrn_clr)();
-    *plot_color += 0x10;
   }
   
   return 0;
