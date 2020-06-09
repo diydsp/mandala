@@ -15,12 +15,16 @@ main
         and #$fe
         sta $dc0e   ; disable timer interrupt
 
-        jsr song_irq_start
-wait_here
-        jmp wait_here
+        ;jsr song_irq_start
+
         
         jsr hires_start
+
+
+        ;rts ;;;;;
+
         jsr multiply_init
+        cli
         rts
 
         lda #$06

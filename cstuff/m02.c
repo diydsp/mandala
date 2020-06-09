@@ -10,6 +10,8 @@
 
 // global variable and functions
 void (*demo_main)( void );
+void (*song_irq_start)( void );
+
 void (*mandala_draw)( void );
 void (*hires_clear)( void );
 void (*scrn_clr)( void );
@@ -37,6 +39,7 @@ uint8_t *border_col     = (uint8_t *)0xd020;
 void funcs_init( void )
 {
   demo_main        = (void*)0xc000;
+  song_irq_start   = (void*)0xc100;
   mandala_draw     = (void*)0x9920;
   hires_clear      = (void*)0x9018;
   scrn_clr         = (void*)0x9020;
@@ -133,17 +136,19 @@ void simple_spiral( void )
 
 int main ()
 {
-  
-  __asm__  ("sei");
-   
   funcs_init();
+
+  demo_main();   // multiply init, hires_start
+  
 
   basic_config();  // starting config
 
   scrn_clr();    // text screen, uses scrn_clr_color
   hires_clear(); // hires screen, uses scrn_clr_byte
-  demo_main();   // multiply init, hires_start
 
+  song_irq_start();
+  
+  
   while( 1 ) {
     simple_spiral();
   }

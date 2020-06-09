@@ -196,16 +196,19 @@ hires_start
         
 
        ; switch to hires mode
-        lda 53265   ; $d011
+        lda $d011   ; $d011
         ora #$20
-        sta 53265
+        sta $d011
+
 
         ; bank out the BASIC ROM, so hires screen can start at $a000
         lda $01
-        and #$f8   ;we turn off BASIC, char rom and kernal
-        
+        and #$f8   ;we turn off BASIC and kernal
+        ora #$05
         sta $01    ;the cpu now sees RAM everywhere except at $d000-$dfff, where still the registers of
                    ;SID/VICII/etc are visible
+wait_here
+        ;jmp wait_here
 
         rts
 
