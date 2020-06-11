@@ -6,7 +6,7 @@
 #include <_vic2.h>
 #include <_sid.h>
 
-#pragma optimize(off)
+//#pragma optimize(off)
 
 // global variable and functions
 void (*demo_main)( void );
@@ -134,8 +134,89 @@ void simple_spiral( void )
   //*angle_delta++;
 }
 
+void penta1( void )
+{
+  uint8_t m1,m2;
+  uint8_t start_angle;
+
+  *radius_delta = 2;
+  *angle_delta  = 0;
+  *angle_bump = 26;
+  start_angle = 0;
+  *(points_count+1) = 10;
+  *(iters_count+1)  = 5;
+  for(m2=20;m2<60;m2+=5){
+    for(m1 = 0;m1<10;m1+=1){
+      *angle = start_angle + m1;
+      *radius = m2;
+      mandala_draw();
+    }
+    *plot_color += 0x10;
+    start_angle-=9;
+  }
+
+  *radius_delta = 2;
+  *angle_delta  = 0;
+  *angle_bump = 43;
+  start_angle = 0;
+  *(points_count+1) = 6;
+  *(iters_count+1)  = 3;
+  for(m2=60;m2<80;m2+=5){
+    for(m1 = 0;m1<10;m1+=1){
+      *angle = start_angle + m1;
+      *radius = m2;
+      mandala_draw();
+    }
+    *plot_color += 0x10;
+    start_angle-=4;
+  }
+
+  hplot_set_mode();
+  *radius_delta = 1;
+  *angle_delta  = 0;
+  *angle_bump = 51;
+  *radius=50;
+  start_angle = 0;
+  *(points_count+1) = 5;
+  *(iters_count+1)  = 6;
+
+  for(m2=80;m2<110;m2+=10){
+    for(m1 = 0;m1<10;m1+=1){
+      *angle = start_angle + m1;
+      *radius = m2;
+      mandala_draw();
+    }
+    *plot_color += 0x10;
+    start_angle+=4;
+  }
+
+
+  *radius_delta = 2;
+  *angle_delta  = 0;
+  *angle_bump = 32;
+  start_angle = 0;
+  *(points_count+1) = 6;
+  *(iters_count+1)  = 3;
+  for(m2=100;m2<127;m2+=5){
+    for(m1 = 0;m1<10;m1+=2){
+      *angle = start_angle + m1;
+      *radius = m2;
+      mandala_draw();
+    }
+    *plot_color += 0x10;
+    start_angle-=9;
+  }
+
+  
+}
+
 int main ()
 {
+  uint8_t count;
+  for( count = 0; count < 100; count++ ){
+    printf("music: shortcut by stephen paul taylor\n");
+  }
+
   funcs_init();
 
   demo_main();   // multiply init, hires_start
@@ -150,7 +231,8 @@ int main ()
   
   
   while( 1 ) {
-    simple_spiral();
+    penta1();
+    //simple_spiral();
   }
   
   return 0;
