@@ -1,7 +1,11 @@
+f 1 1 37
+r pc=fce2
+step
+x
+ret
 l"rot_test.prg"0
 ll"rot_test.dup"
 l"m02"0
-ll"cstuff/m02.lbl"
 ll"cstuff/m02.lbl"
 l"/Users/Noah/c64/goattrk2/win32/song.bin"0 3000
 r pc=80d

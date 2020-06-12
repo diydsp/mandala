@@ -36,6 +36,17 @@ uint8_t *radius_delta2  ;
 
 uint8_t *border_col     = (uint8_t *)0xd020;
 
+uint8_t pal_01[] = {0,6,9,0xb,2,4,8,0xe,0xa,5,3,0xf,7,1,1,1, //16step,b->w->b
+                    1,1,1,7,0xf,3,5,0xa,0xe,8,4,2,0xb,9,6,0 }; 
+uint8_t pal_02[] = {2,9,0xa,         // red, pink   // 25-step, rainbow
+		    7,7,7,      // yel
+		    5,5,5,5,   // grn
+		    3,3,3,3,   // cyan
+		    0xe,6,6,6,0xe,  // blue
+		    4,4,4,4,  // purp
+		    0xa,2};   // red, pink    
+uint8_t pal_step, pal_len;
+
 void funcs_init( void )
 {
   demo_main        = (void*)0xc000;
@@ -134,6 +145,20 @@ void simple_spiral( void )
   //*angle_delta++;
 }
 
+void circle( void )
+{
+  *radius_delta = 1;
+  *angle_delta  = 0;
+  *angle_bump = 1;
+  *(points_count+1) = 40;
+  *(iters_count+1)  = 4;
+  
+  mandala_draw();
+
+  
+}
+	    
+
 void penta1( void )
 {
   uint8_t m1,m2;
@@ -213,8 +238,11 @@ void penta1( void )
 int main ()
 {
   uint8_t count;
-  for( count = 0; count < 100; count++ ){
-    printf("music: shortcut by stephen paul taylor\n");
+  *(uint8_t *)0xd020=0;
+  *(uint8_t *)0xd021=0;
+  *(uint8_t *)646=1;    // white cursors
+  for( count = 0; count < 30; count++ ){
+    printf("Music: shortcut by stephen paul taylor\n");
   }
 
   funcs_init();
@@ -228,10 +256,28 @@ int main ()
   hires_clear(); // hires screen, uses scrn_clr_byte
 
   song_irq_start();
-  
+
+  pal_step=0;
+  pal_len=32;
   
   while( 1 ) {
-    penta1();
+
+    *plot_color = pal_01[ pal_step ] << 4;
+    pal_step++;
+    if( pal_step >= pal_len ){
+      pal_step = 0;
+    }
+    *radius = 100;
+    circle();
+    *radius = 80;
+    circle();
+    *radius = 60;
+    circle();
+    *radius = 40;
+    circle();
+    *angle = *angle+4;
+    
+    //penta1();
     //simple_spiral();
   }
   
