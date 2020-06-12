@@ -36,8 +36,8 @@ uint8_t *radius_delta2  ;
 
 uint8_t *border_col     = (uint8_t *)0xd020;
 
-uint8_t pal_01[] = {0,6,9,0xb,2,4,8,0xe,0xa,5,3,0xf,7,1,1,1, //16step,b->w->b
-                    1,1,1,7,0xf,3,5,0xa,0xe,8,4,2,0xb,9,6,0 }; 
+uint8_t pal_01[] = {0,0,6,9,0xb,2,4,8,0xe,0xa,5,3,0xf,7,1,1, //16step,b->w->b
+                    1,1,7,0xf,3,5,0xa,0xe,8,4,2,0xb,9,6,0,0 }; 
 uint8_t pal_02[] = {2,9,0xa,         // red, pink   // 25-step, rainbow
 		    7,7,7,      // yel
 		    5,5,5,5,   // grn
@@ -46,6 +46,7 @@ uint8_t pal_02[] = {2,9,0xa,         // red, pink   // 25-step, rainbow
 		    4,4,4,4,  // purp
 		    0xa,2};   // red, pink    
 uint8_t pal_step, pal_len;
+uint8_t pal_sub_step, pal_sub_len;
 
 void funcs_init( void )
 {
@@ -107,42 +108,16 @@ void basic_config( void )
   *angle_bump        = 5;  // adds at end of each iteration
 }
 
-void simple_spiral( void )
+
+void hexa1( void )
 {
-  uint8_t m1,m2;
-  uint8_t temp;
-
-  for(m1 = 0;m1<10;m1++){
-    for(m2=0;m2<10;m2++){
-      *points_count     = 0;
-      *(points_count+1) = 8;
-      *iters_count      = 0;
-      *(iters_count+1)  = 20;
-      
-      *angle_delta = 32;
-      *radius_delta = m2;
-      hplot_set_mode();
-      *angle =0;
-      *radius=50;
-      mandala_draw();
-
-      hplot_unset_mode();
-      *angle =0;
-      *radius=50;
-      mandala_draw();
-      //hires_clear();
-    }
-    *plot_color += 0x10;
-  }
-      
-  //*angle=0;
-  //*radius = 150;
-  //*scrn_clr_color++;
-  //*scrn_clr_byte    = 0;
-  //*scrn_clr_color++;
-  //*scrn_clr_byte++;
-  //*scrn_clr_byte    = 0;
-  //*angle_delta++;
+  *radius_delta = 1;
+  *angle_delta  = 0;
+  *angle_bump = 42;
+  *(points_count+1) = 6;
+  *(iters_count+1)  =24;
+  
+  mandala_draw();
 }
 
 void circle( void )
@@ -151,7 +126,7 @@ void circle( void )
   *angle_delta  = 0;
   *angle_bump = 1;
   *(points_count+1) = 40;
-  *(iters_count+1)  = 4;
+  *(iters_count+1)  = 3;
   
   mandala_draw();
 
@@ -231,18 +206,84 @@ void penta1( void )
     *plot_color += 0x10;
     start_angle-=9;
   }
-
   
+}
+
+void simple_spiral( void )
+{
+  uint8_t m1,m2;
+  uint8_t temp;
+
+  for(m1 = 0;m1<10;m1++){
+    for(m2=0;m2<10;m2++){
+      *points_count     = 0;
+      *(points_count+1) = 8;
+      *iters_count      = 0;
+      *(iters_count+1)  = 20;
+      
+      *angle_delta = 32;
+      *radius_delta = m2;
+      hplot_set_mode();
+      *angle =0;
+      *radius=50;
+      mandala_draw();
+
+      hplot_unset_mode();
+      *angle =0;
+      *radius=50;
+      mandala_draw();
+    }
+    hires_clear();
+    *plot_color += 0x10;
+  }
+      
+  //*angle=0;
+  //*radius = 150;
+  //*scrn_clr_color++;
+  //*scrn_clr_byte    = 0;
+  //*scrn_clr_color++;
+  //*scrn_clr_byte++;
+  //*scrn_clr_byte    = 0;
+  //*angle_delta++;
+}
+
+
+uint8_t incr_sub_pal(void )
+{
+  uint8_t ret_val =0;
+  // incr sub palette
+  if( pal_sub_step++ >= pal_sub_len ){
+    pal_sub_step = 0;
+    ret_val = 1;
+    *plot_color = pal_01[ pal_step ] << 4;
+    pal_step++;
+    if( pal_step >= pal_len ){pal_step = 0;}
+  }
+  return ret_val;
 }
 
 int main ()
 {
   uint8_t count;
+  char out_str[39];
+  const char SPT[40]="Music: Shortcut by Stephen paul taylor\n";
+  uint8_t loops;
+  uint8_t index;
+  
+  // bg, fg, cursor colors
   *(uint8_t *)0xd020=0;
   *(uint8_t *)0xd021=0;
   *(uint8_t *)646=1;    // white cursors
-  for( count = 0; count < 30; count++ ){
-    printf("Music: shortcut by stephen paul taylor\n");
+
+  // string effect
+  for( count = 0; count < 39; count++ ){ out_str[count]=' ';}
+  out_str[39] = '\n';
+  for( count = 0; count < 69; count++ ){
+    index = *(uint8_t*)0xd012;
+    index &= 0x3f;
+    while(index>39){index-=39;}
+    out_str[ index ] = SPT[index];
+    printf( "%s\n", out_str );
   }
 
   funcs_init();
@@ -250,7 +291,7 @@ int main ()
   demo_main();   // multiply init, hires_start
   
 
-  basic_config();  // starting config
+  basic_config();  // starting pattern config
 
   scrn_clr();    // text screen, uses scrn_clr_color
   hires_clear(); // hires screen, uses scrn_clr_byte
@@ -259,53 +300,47 @@ int main ()
 
   pal_step=0;
   pal_len=32;
+  pal_sub_step=0;
+  pal_sub_len=3;
+  
   
   while( 1 ) {
 
-    *plot_color = pal_01[ pal_step ] << 4;
-    pal_step++;
-    if( pal_step >= pal_len ){
-      pal_step = 0;
+    for(loops=0;loops<50;loops++)
+    {
+      *radius = 100;    circle();
+      *radius = 80;    circle();
+      *radius = 60;    circle();
+      *radius = 40;    circle();
+      *angle = *angle+32;
+      if( incr_sub_pal() ){ hires_clear();  }
     }
-    *radius = 100;
-    circle();
-    *radius = 80;
-    circle();
-    *radius = 60;
-    circle();
-    *radius = 40;
-    circle();
-    *angle = *angle+4;
     
-    //penta1();
-    //simple_spiral();
+    for(loops=0;loops<100;loops++)
+    {
+      hexa1();
+      *angle = *angle+4;
+      *radius-=8;
+      if( incr_sub_pal() ){ hires_clear();  }
+    }
+    hires_clear();
+
+    for(loops=0;loops<1;loops++)
+    {
+      penta1();
+      if( incr_sub_pal() ){ hires_clear();  }      
+    }
+    hires_clear();
+
+    for(loops=0;loops<1;loops++)
+    {
+      simple_spiral();
+      if( incr_sub_pal() ){ hires_clear();  }
+    }
+    hires_clear();
+    
   }
   
   return 0;
 }
 
-void hmm( void )
-{
-  //uint8_t *scr   = (uint8_t*) 0x0400;  // screen
-  //*(scr + 40 * 0 ) = 0;
-  
-  //unsigned char *chars = (uint8_t*) 0x2000;  // char memory
-  uint8_t       *scr   = (uint8_t*) 0x0400;  // screen
-
-  //COLOR_RAM[0] = 5;
-  VIC.bgcolor[0] = 1;
-  VIC.bgcolor[21] = 5;
-  VIC.bgcolor[2] = 14;
-  VIC.bgcolor[3] = 8;
-
-  //VIC.ctrl2 |= 0x10;  // set multicolor mode
-  //VIC.addr   = ( VIC.addr & 0xf0 ) | 0x08;    // set pagenum
-
-  //*( chars + 0 ) = 0;
-  
-  while(1)
-  {
-    COLOR_RAM[ 40*0 + 0 ] = 0;
-  }
-
-}
