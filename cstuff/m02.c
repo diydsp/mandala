@@ -87,7 +87,7 @@ void basic_config( void )
   *iters_count      = 0;
   *(iters_count+1)  = 10;
   
-  *angle            = 45;
+  *angle            = 45; // current angle
   *(angle+1)        = 0;
   *radius           = 50;
   *(radius+1)       = 0;
@@ -97,15 +97,15 @@ void basic_config( void )
   *radius_delta     = 1;  // per point
   *(radius_delta+1) = 0;
 
-  *angle_ratchet    = 5;
-  *radius_ratchet   = 10;  // draw the next ones wit this delta
+  *angle_ratchet    = 5;  // applied after all iterations
+  *radius_ratchet   = 10; 
 
-  *angle_delta2      = 0;
+  *angle_delta2      = 0;  // not immediately used
   *(angle_delta2+1)  = 0;
   *radius_delta2     = 0;
   *(radius_delta2+1) = 0;
   
-  *angle_bump        = 5;  // adds at end of each iteration
+  *angle_bump        = 5;  // every every pixel, used to make equilaterals
 }
 
 
@@ -216,9 +216,7 @@ void simple_spiral( void )
 
   for(m1 = 0;m1<10;m1++){
     for(m2=0;m2<10;m2++){
-      *points_count     = 0;
       *(points_count+1) = 8;
-      *iters_count      = 0;
       *(iters_count+1)  = 20;
       
       *angle_delta = 32;
@@ -247,6 +245,29 @@ void simple_spiral( void )
   //*angle_delta++;
 }
 
+void spiral2( void )
+{
+  hplot_set_mode(); // foreground
+
+  *(points_count+1) = 6;  // hex pattern
+  *(angle_bump) = 42;
+
+  *(radius) = 127;
+      
+  *angle_delta = 1; // called after all points
+  *radius_delta = -1;
+
+  *(iters_count+1)  = 40;
+
+  *angle_ratchet = 1;
+  *radius_ratchet = 30;
+  
+  mandala_draw();
+
+  
+  
+}
+
 
 uint8_t incr_sub_pal(void )
 {
@@ -266,7 +287,7 @@ int main ()
 {
   uint8_t count;
   char out_str[39];
-  const char SPT[40]="Music: Shortcut by Stephen paul taylor\n";
+  const char SPT[]="Music:Shortcut by Stephen Paul Taylor";
   uint8_t loops;
   uint8_t index;
   
@@ -276,14 +297,16 @@ int main ()
   *(uint8_t *)646=1;    // white cursors
 
   // string effect
-  for( count = 0; count < 39; count++ ){ out_str[count]=' ';}
-  out_str[39] = '\n';
-  for( count = 0; count < 69; count++ ){
-    index = *(uint8_t*)0xd012;
-    index &= 0x3f;
-    while(index>39){index-=39;}
-    out_str[ index ] = SPT[index];
-    printf( "%s\n", out_str );
+  //for( count = 0; count < 39; count++ ){ out_str[count]=' ';}
+  //out_str[39] = '\r';
+  for( count = 0; count < 20; count++ ){
+    //index = *(uint8_t*)0xd012;
+    //index &= 0x3f;
+    //while(index>39){index-=39;}
+    //out_str[ index ] = SPT[index];
+    //printf( "%s\n", out_str );
+    printf( "%c",147);
+    printf( "%s\n", SPT );
   }
 
   funcs_init();
@@ -296,8 +319,9 @@ int main ()
   scrn_clr();    // text screen, uses scrn_clr_color
   hires_clear(); // hires screen, uses scrn_clr_byte
 
-  song_irq_start();
+  //song_irq_start();
 
+  // palette config
   pal_step=0;
   pal_len=32;
   pal_sub_step=0;
@@ -306,6 +330,15 @@ int main ()
   
   while( 1 ) {
 
+    for(loops=0;loops<50;loops++)
+    {
+      *(angle)=0;
+      spiral2();
+      if( incr_sub_pal() ){ hires_clear();  }
+      //hires_clear();
+    }
+
+    
     for(loops=0;loops<50;loops++)
     {
       *radius = 100;    circle();
