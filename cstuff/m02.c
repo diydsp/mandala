@@ -122,6 +122,55 @@ uint8_t incr_sub_pal(void )
   }
   return ret_val;
 }
+// end of helper funcs
+
+// start of demo effeocts
+void clear_black( uint8_t loops_max )
+{
+  uint8_t loops;
+ 
+  // init gfx conditions
+  *scrn_clr_color = 0xb0;  // dk gray on blk
+  //*scrn_clr_color = 0x5b;  // gren fg, dk grey bg
+  *scrn_clr_byte  = 0x01;     // slight blip
+
+  // loops
+  for(loops=0;loops<loops_max;loops++){
+    hires_clear();
+    scrn_clr();
+  }
+}
+
+void simple_sweep( uint8_t loops_max )
+{
+  uint8_t loops;
+
+  // init gfx conditions
+  *scrn_clr_color = 0x20;  // gren fg, dk grey bg
+  *scrn_clr_byte  = 0;     // slight blip for visibility
+  hires_clear();
+  scrn_clr();
+  
+  // config
+  hplot_set_mode();
+  *(angle)          = 128;
+  *(radius)         = 10;
+  *(points_count+1) = 1;  *angle_bump = 0;  // single point
+  *angle_delta = 0; *radius_delta = 1;   // after all points
+  *(iters_count+1)  = 100;
+  *angle_ratchet    =  0; *radius_ratchet = -100; // called after all iters
+  *plot_color = 0x20;
+
+  // loop
+  for(loops=0;loops<loops_max;loops++){
+    //if( (loops&0x30) == 0x30){ hires_clear(); }
+    mandala_draw();
+    *(angle) += 2;
+    if( (*angle) < 2 ){ *(angle) = 128; }
+  }
+}
+
+
 
 void bg_sweep( void )
 {
@@ -308,7 +357,6 @@ void spiral2( void )
 int main ()
 {
   uint8_t count;
-  char out_str[39];
   const char SPT[]="Music:Shortcut by Stephen Paul Taylor";
   uint8_t loops;
   uint8_t index;
@@ -341,7 +389,7 @@ int main ()
   scrn_clr();    // text screen, uses scrn_clr_color
   hires_clear(); // hires screen, uses scrn_clr_byte
 
-  //song_irq_start();
+  song_irq_start();
 
   // palette config
   pal_step=0;
@@ -352,11 +400,17 @@ int main ()
   
   while( 1 ) {
 
+    clear_black(70);
+
+    // simple_sweep
+    simple_sweep( 64 );
+  }
+
+  if( 0 ){
     bg_sweep();
     
     spiral2();
 
-    
     for(loops=0;loops<50;loops++)
     {
       *radius = 100;    circle();
