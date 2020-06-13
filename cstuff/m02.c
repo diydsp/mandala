@@ -172,8 +172,7 @@ void simple_sweep( uint8_t loops_max )
 
 void stars( uint8_t loops_max )
 {
-  uint8_t m1,m2;
-  uint8_t temp;
+  uint8_t m2;
   uint8_t loop;
   uint8_t ang_start;
   uint8_t rad_start;
@@ -229,12 +228,25 @@ void polar_triangle( void )
   mandala_draw();
 }
 
-void geometry( uint8_t loops_max, uint8_t mode, uint8_t rad_start )
+
+void polar_square( void )
 {
-  uint8_t m1,m2;
-  uint8_t temp;
+  // polar triangle
+  *angle_delta  = 1;        *radius_delta = 0;
+  mandala_draw();
+  *angle_delta  = 0;        *radius_delta = 1;
+  mandala_draw();
+  *angle_delta  = -1;       *radius_delta = 0;
+  mandala_draw();
+  *angle_delta  = 0;        *radius_delta = -1;
+  mandala_draw();
+}
+
+
+// begin mandala1
+void mandala1( uint8_t loops_max, uint8_t mode, uint8_t rad_start, uint8_t ang_start, uint8_t iters )
+{
   uint8_t loop;
-  uint8_t ang_start;
   
   // init gfx conditions
   hplot_set_mode();
@@ -250,9 +262,8 @@ void geometry( uint8_t loops_max, uint8_t mode, uint8_t rad_start )
   *(points_count+1) = 3;  *angle_bump = 85;  // triangle
   *angle_ratchet    =  0; *radius_ratchet = 0; // called after all iters
 
-  *(iters_count+1)  = 20;
-  ang_start = 0;
-  //rad_start = 50;
+  *(iters_count+1)  = iters;
+
 
   switch(mode)
   {
@@ -271,7 +282,6 @@ void geometry( uint8_t loops_max, uint8_t mode, uint8_t rad_start )
   
   case 2:  // clear trails
   hplot_unset_mode();
-  //rad_start = 80;
   *plot_color = 0x70;  // yellow
   for( loop=0;loop < loops_max; loop++ ){
     
@@ -291,7 +301,7 @@ void geometry( uint8_t loops_max, uint8_t mode, uint8_t rad_start )
   }
   
 }
-
+//end mandala1
 
 void bg_sweep( void )
 {
@@ -501,9 +511,13 @@ int main ()
 
     //stars( 5 );
 
-    geometry( 30, 1, 50 );
-    geometry( 30, 2, 80 );
-    geometry( 30, 2, 20 );
+    // loops, mode, rad_st, ang_st, iters
+    mandala1( 30, 1, 50, 0, 20);
+    mandala1( 30, 2, 80, 0, 20 );
+    mandala1( 30, 2, 20, 0, 20 );
+
+    
+    //mandala1( 10, 1, 50, 0, 20 );  
     
   }
 
