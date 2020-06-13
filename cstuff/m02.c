@@ -8,7 +8,7 @@
 
 //#pragma optimize(off)
 
-// global variable and functions
+// external variable and functions
 void (*demo_main)( void );
 void (*song_irq_start)( void );
 
@@ -17,7 +17,10 @@ void (*hires_clear)( void );
 void (*scrn_clr)( void );
 void (*hplot_set_mode)( void );
 void (*hplot_unset_mode)( void );
-  
+
+// internal
+void (*shape_func)(void);
+
 uint8_t *mandala_base = (uint8_t*)0x9900;  // mandala_base
 uint8_t *angle_bump     ;
 uint8_t *points_count   ;
@@ -242,28 +245,43 @@ void polar_square( void )
   mandala_draw();
 }
 
+void polar_diamond( void )
+{
+  *angle_delta  = 1;        *radius_delta = 1;
+  mandala_draw();
+  *angle_delta  = -1;        *radius_delta = 1;
+  mandala_draw();
+  *angle_delta  = -1;       *radius_delta = -1;
+  mandala_draw();
+  *angle_delta  = 1;        *radius_delta = -1;
+  mandala_draw();
+}
+
+void polar_hexagon( void )
+{
+  *angle_delta  = 1;        *radius_delta = 0;
+  mandala_draw();
+  *angle_delta  = 1;        *radius_delta = 1;
+  mandala_draw();
+  *angle_delta  = -1;       *radius_delta = 1;
+  mandala_draw();
+  *angle_delta  = -1;        *radius_delta = 0;
+  mandala_draw();
+  *angle_delta  = -1;       *radius_delta = -1;
+  mandala_draw();
+  *angle_delta  = 1;        *radius_delta = -1;
+  mandala_draw();
+}
+
 
 // begin mandala1
-void mandala1( uint8_t loops_max, uint8_t mode, uint8_t rad_start, uint8_t ang_start, uint8_t iters )
+void mandala1( uint8_t loops_max, uint8_t mode, uint8_t rad_start, uint8_t ang_start, uint8_t iters, uint8_t plot_col )
 {
   uint8_t loop;
   
-  // init gfx conditions
-  hplot_set_mode();
-  *scrn_clr_color = 0x20;  // gren fg, dk grey bg
-  *scrn_clr_byte  = 0;     // slight blip for visibility
-  scrn_clr();
-  pal_sub_step = 0; pal_sub_len = 1;
-  pal_step     = 2; pal_len     = 25;
-  //*plot_color = pal_02[ pal_step ] << 4;
-  *plot_color = 0x10;
-  
-  // config mandala
-  *(points_count+1) = 3;  *angle_bump = 85;  // triangle
-  *angle_ratchet    =  0; *radius_ratchet = 0; // called after all iters
-
+  // config
   *(iters_count+1)  = iters;
-
+  *plot_color = plot_col;
 
   switch(mode)
   {
@@ -273,7 +291,8 @@ void mandala1( uint8_t loops_max, uint8_t mode, uint8_t rad_start, uint8_t ang_s
     
     hplot_set_mode();
     *angle = ang_start;       *radius = rad_start;
-    polar_triangle();
+    shape_func();
+    //polar_triangle();
     
     // modulation
     ang_start += 5;
@@ -287,11 +306,13 @@ void mandala1( uint8_t loops_max, uint8_t mode, uint8_t rad_start, uint8_t ang_s
     
     hplot_set_mode();
     *angle = ang_start;       *radius = rad_start;
-    polar_triangle();
+    shape_func();
+    //polar_triangle();
 
     hplot_unset_mode();
     *angle = ang_start;       *radius = rad_start;
-    polar_triangle();
+    shape_func();
+    //polar_triangle();
 
     // modulation
     ang_start += 5;
@@ -511,13 +532,29 @@ int main ()
 
     //stars( 5 );
 
-    // loops, mode, rad_st, ang_st, iters
-    mandala1( 30, 1, 50, 0, 20);
-    mandala1( 30, 2, 80, 0, 20 );
-    mandala1( 30, 2, 20, 0, 20 );
+    // geometry
+    // init gfx conditions
+    hplot_set_mode();
+    *scrn_clr_color = 0x20;  // gren fg, dk grey bg
+    *scrn_clr_byte  = 0;     // slight blip for visibility
+    scrn_clr();
+    pal_sub_step = 0; pal_sub_len = 1;
+    pal_step     = 2; pal_len     = 25;
+    //*plot_color = pal_02[ pal_step ] << 4;
+    *(points_count+1) = 3;  *angle_bump = 85;  // triangle
+    *angle_ratchet    =  0; *radius_ratchet = 0; // called after all iters
+    shape_func = (void*)polar_triangle;
+    shape_func = (void*)polar_square;
+    //shape_func = (void*)polar_diamond;
+    shape_func = (void*)polar_hexagon;
 
-    
-    //mandala1( 10, 1, 50, 0, 20 );  
+
+    // loops, mode, rad_st, ang_st, iters, plot_color
+    mandala1( 30, 1, 50, 0, 20, 0x10 );
+    mandala1( 30, 2, 80, 0, 20, 0x20 );
+    mandala1( 30, 2, 20, 0, 20, 0x30 );
+
+    //mandala1( 10, 1, 50, 0, 20, 0x5 );  
     
   }
 
