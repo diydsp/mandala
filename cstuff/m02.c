@@ -116,7 +116,7 @@ uint8_t incr_sub_pal(void )
   if( pal_sub_step++ >= pal_sub_len ){
     pal_sub_step = 0;
     ret_val = 1;
-    *plot_color = pal_01[ pal_step ] << 4;
+    *plot_color = pal_02[ pal_step ] << 4;
     pal_step++;
     if( pal_step >= pal_len ){pal_step = 0;}
   }
@@ -170,6 +170,127 @@ void simple_sweep( uint8_t loops_max )
   }
 }
 
+void stars( uint8_t loops_max )
+{
+  uint8_t m1,m2;
+  uint8_t temp;
+  uint8_t loop;
+  uint8_t ang_start;
+  uint8_t rad_start;
+  
+  // init gfx conditions
+  *scrn_clr_color = 0x20;  // gren fg, dk grey bg
+  *scrn_clr_byte  = 0;     // slight blip for visibility
+  hires_clear();
+  scrn_clr();
+  pal_sub_step = 0; pal_sub_len = 1;
+  pal_step     = 0; pal_len     = 25;
+  *plot_color = pal_02[ pal_step ] << 4;
+  
+  // config mandala
+  *(points_count+1) = 8;  *angle_bump = 32;  // octagon
+  *(iters_count+1)  = 20;
+  *angle_ratchet    =  0; *radius_ratchet =  0; // called after all iters
+  ang_start = 0;
+  rad_start = 50;
+  
+  // loop
+  for(loop=0;loop<loops_max;loop++)
+  {
+    for(m2=0;m2<10;m2++){
+      
+      *radius_delta = m2;
+
+      hplot_set_mode();
+      *angle  = ang_start;
+      *radius = rad_start;
+      mandala_draw();
+    
+      hplot_unset_mode();
+      *angle  = ang_start;
+      *radius = rad_start;
+      //mandala_draw();
+
+      incr_sub_pal();
+    }
+  }
+      
+}
+
+
+void polar_triangle( void )
+{
+  // polar triangle
+  *angle_delta  = 1;        *radius_delta = 1;
+  mandala_draw();
+  *angle_delta  = -2;       *radius_delta = 0;
+  mandala_draw();
+  *angle_delta  = 1;        *radius_delta = 0xff;
+  mandala_draw();
+}
+
+void geometry( uint8_t loops_max, uint8_t mode, uint8_t rad_start )
+{
+  uint8_t m1,m2;
+  uint8_t temp;
+  uint8_t loop;
+  uint8_t ang_start;
+  
+  // init gfx conditions
+  hplot_set_mode();
+  *scrn_clr_color = 0x20;  // gren fg, dk grey bg
+  *scrn_clr_byte  = 0;     // slight blip for visibility
+  scrn_clr();
+  pal_sub_step = 0; pal_sub_len = 1;
+  pal_step     = 2; pal_len     = 25;
+  //*plot_color = pal_02[ pal_step ] << 4;
+  *plot_color = 0x10;
+  
+  // config mandala
+  *(points_count+1) = 3;  *angle_bump = 85;  // triangle
+  *angle_ratchet    =  0; *radius_ratchet = 0; // called after all iters
+
+  *(iters_count+1)  = 20;
+  ang_start = 0;
+  //rad_start = 50;
+
+  switch(mode)
+  {
+  case 1:  // leave trails
+  hires_clear();
+  for( loop=0;loop < loops_max; loop++ ){
+    
+    hplot_set_mode();
+    *angle = ang_start;       *radius = rad_start;
+    polar_triangle();
+    
+    // modulation
+    ang_start += 5;
+  }
+  break;
+  
+  case 2:  // clear trails
+  hplot_unset_mode();
+  //rad_start = 80;
+  *plot_color = 0x70;  // yellow
+  for( loop=0;loop < loops_max; loop++ ){
+    
+    hplot_set_mode();
+    *angle = ang_start;       *radius = rad_start;
+    polar_triangle();
+
+    hplot_unset_mode();
+    *angle = ang_start;       *radius = rad_start;
+    polar_triangle();
+
+    // modulation
+    ang_start += 5;
+  }
+  break;
+  
+  }
+  
+}
 
 
 void bg_sweep( void )
@@ -279,34 +400,8 @@ void penta1( void )
   
 }
 
-void simple_spiral( void )
-{
-  uint8_t m1,m2;
-  uint8_t temp;
 
-  *(points_count+1) = 8;  *angle_delta = 32;  // octagon
-  *(iters_count+1)  = 20;
-  *angle_ratchet    =  0; *radius_ratchet =  0; // called after all iters
-  
-  for(m2=0;m2<10;m2++){
-      
-    *radius_delta = m2;
-    hplot_set_mode();
-    *angle =0;
-    *radius=50;
-    mandala_draw();
-    
-    hplot_unset_mode();
-    *angle =0;
-    *radius=50;
-    mandala_draw();
-
-    incr_sub_pal();
-  }
-      
-}
-
-void spiral2( void )
+void spiral2( uint8_t loops_max )
 {
   uint8_t loops;
   uint8_t start_angle = 0;
@@ -319,7 +414,7 @@ void spiral2( void )
   *(radius) = 127;
   pal_sub_len=10;
   
-  for(loops=0;loops<4;loops++)
+  for(loops=0;loops< loops_max;loops++)
   {
     hplot_set_mode(); // foreground
     *(angle)=start_angle;
@@ -357,7 +452,7 @@ void spiral2( void )
 int main ()
 {
   uint8_t count;
-  const char SPT[]="Music:Shortcut by Stephen Paul Taylor";
+  char SPT[]="Black Lives Matter!!!";
   uint8_t loops;
   uint8_t index;
   
@@ -400,16 +495,22 @@ int main ()
   
   while( 1 ) {
 
-    clear_black(70);
+    //clear_black(70);
 
-    // simple_sweep
-    simple_sweep( 64 );
+    //simple_sweep( 64 );
+
+    //stars( 5 );
+
+    geometry( 30, 1, 50 );
+    geometry( 30, 2, 80 );
+    geometry( 30, 2, 20 );
+    
   }
 
   if( 0 ){
     bg_sweep();
     
-    spiral2();
+    spiral2( 4 );
 
     for(loops=0;loops<50;loops++)
     {
@@ -438,12 +539,6 @@ int main ()
     }
     hires_clear();
 
-    for(loops=0;loops<1;loops++)
-    {
-      simple_spiral();
-      if( incr_sub_pal() ){ hires_clear();  }
-    }
-    hires_clear();
     
   }
   
