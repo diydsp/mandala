@@ -109,6 +109,36 @@ void basic_config( void )
 }
 
 
+uint8_t incr_sub_pal(void )
+{
+  uint8_t ret_val =0;
+  // incr sub palette
+  if( pal_sub_step++ >= pal_sub_len ){
+    pal_sub_step = 0;
+    ret_val = 1;
+    *plot_color = pal_01[ pal_step ] << 4;
+    pal_step++;
+    if( pal_step >= pal_len ){pal_step = 0;}
+  }
+  return ret_val;
+}
+
+void bg_sweep( void )
+{
+  uint8_t loops;
+  uint8_t temp;
+  
+  *scrn_clr_byte    = 0x01;  // used in hires_clear
+  
+  for( loops=0;loops<50;loops++)
+  {
+    temp = *scrn_clr_byte;
+    if( temp == 0x80 ){ *scrn_clr_byte = 0x01;}
+    else { *scrn_clr_byte = temp << 1; }
+    hires_clear();
+  }
+}
+
 void hexa1( void )
 {
   *radius_delta = 1;
@@ -139,63 +169,54 @@ void penta1( void )
   uint8_t m1,m2;
   uint8_t start_angle;
 
-  *radius_delta = 2;
-  *angle_delta  = 0;
-  *angle_bump = 26;
+
+  *angle_delta  = 0;  *radius_delta = 2;   
+  *(points_count+1) = 10;  *angle_bump = 26;  // 10-side
   start_angle = 0;
-  *(points_count+1) = 10;
   *(iters_count+1)  = 5;
-  for(m2=20;m2<60;m2+=5){
+  for(m2=20;m2<55;m2+=5){
     for(m1 = 0;m1<10;m1+=1){
       *angle = start_angle + m1;
       *radius = m2;
       mandala_draw();
     }
-    *plot_color += 0x10;
+    incr_sub_pal();
     start_angle-=9;
   }
 
-  *radius_delta = 2;
-  *angle_delta  = 0;
-  *angle_bump = 43;
+  *angle_delta  = 0;  *radius_delta = 2;  
+  *(points_count+1) = 6;  *angle_bump = 43;  // 6-side
   start_angle = 0;
-  *(points_count+1) = 6;
   *(iters_count+1)  = 3;
-  for(m2=60;m2<80;m2+=5){
+  for(m2=60;m2<75;m2+=5){
     for(m1 = 0;m1<10;m1+=1){
       *angle = start_angle + m1;
       *radius = m2;
       mandala_draw();
     }
-    *plot_color += 0x10;
+    incr_sub_pal();
     start_angle-=4;
   }
 
   hplot_set_mode();
-  *radius_delta = 1;
-  *angle_delta  = 0;
-  *angle_bump = 51;
-  *radius=50;
+  *angle_delta  = 0; *radius_delta = 1;  
+  *(points_count+1) = 5;  *angle_bump = 51;  // 5-side
   start_angle = 0;
-  *(points_count+1) = 5;
   *(iters_count+1)  = 6;
-
-  for(m2=80;m2<110;m2+=10){
+  for(m2=80;m2<95;m2+=10){
     for(m1 = 0;m1<10;m1+=1){
       *angle = start_angle + m1;
       *radius = m2;
       mandala_draw();
     }
-    *plot_color += 0x10;
+    incr_sub_pal();
     start_angle+=4;
   }
 
 
-  *radius_delta = 2;
-  *angle_delta  = 0;
-  *angle_bump = 32;
+  *angle_delta  = 0;  *radius_delta = 2;  
+  *(points_count+1) = 6;  *angle_bump = 43;  //  6-side
   start_angle = 0;
-  *(points_count+1) = 6;
   *(iters_count+1)  = 3;
   for(m2=100;m2<127;m2+=5){
     for(m1 = 0;m1<10;m1+=2){
@@ -203,7 +224,7 @@ void penta1( void )
       *radius = m2;
       mandala_draw();
     }
-    *plot_color += 0x10;
+    incr_sub_pal();
     start_angle-=9;
   }
   
@@ -214,74 +235,75 @@ void simple_spiral( void )
   uint8_t m1,m2;
   uint8_t temp;
 
-  for(m1 = 0;m1<10;m1++){
-    for(m2=0;m2<10;m2++){
-      *(points_count+1) = 8;
-      *(iters_count+1)  = 20;
+  *(points_count+1) = 8;  *angle_delta = 32;  // octagon
+  *(iters_count+1)  = 20;
+  *angle_ratchet    =  0; *radius_ratchet =  0; // called after all iters
+  
+  for(m2=0;m2<10;m2++){
       
-      *angle_delta = 32;
-      *radius_delta = m2;
-      hplot_set_mode();
-      *angle =0;
-      *radius=50;
-      mandala_draw();
+    *radius_delta = m2;
+    hplot_set_mode();
+    *angle =0;
+    *radius=50;
+    mandala_draw();
+    
+    hplot_unset_mode();
+    *angle =0;
+    *radius=50;
+    mandala_draw();
 
-      hplot_unset_mode();
-      *angle =0;
-      *radius=50;
-      mandala_draw();
-    }
-    hires_clear();
-    *plot_color += 0x10;
+    incr_sub_pal();
   }
       
-  //*angle=0;
-  //*radius = 150;
-  //*scrn_clr_color++;
-  //*scrn_clr_byte    = 0;
-  //*scrn_clr_color++;
-  //*scrn_clr_byte++;
-  //*scrn_clr_byte    = 0;
-  //*angle_delta++;
 }
 
 void spiral2( void )
 {
+  uint8_t loops;
+  uint8_t start_angle = 0;
+  
   hplot_set_mode(); // foreground
-
-  *(points_count+1) = 6;  // hex pattern
-  *(angle_bump) = 42;
-
+  *(points_count+1) =  6; *(angle_bump)   = 42;    // hex pattern
+  *angle_delta      =  3; *radius_delta   =  -1; // called after all points
+  *angle_ratchet    =  1; *radius_ratchet =  80; // called after all iters
+  *(iters_count+1)  = 80;
   *(radius) = 127;
-      
-  *angle_delta = 1; // called after all points
-  *radius_delta = -1;
-
-  *(iters_count+1)  = 40;
-
-  *angle_ratchet = 1;
-  *radius_ratchet = 30;
+  pal_sub_len=10;
   
-  mandala_draw();
+  for(loops=0;loops<4;loops++)
+  {
+    hplot_set_mode(); // foreground
+    *(angle)=start_angle;
+    *angle_delta      =  1; *radius_delta   =  -1; // called after all points
+    mandala_draw();
 
-  
-  
-}
+    // make symmetrical copy
+    *(angle)=start_angle;
+    *angle_delta      =  -1; *radius_delta   =  -1; // called after all points
+    mandala_draw();
 
+    hplot_unset_mode(); // background    
+    *(angle)=start_angle;
+    *angle_delta      =  1; *radius_delta   =  -1; // called after all points
+    mandala_draw();
 
-uint8_t incr_sub_pal(void )
-{
-  uint8_t ret_val =0;
-  // incr sub palette
-  if( pal_sub_step++ >= pal_sub_len ){
-    pal_sub_step = 0;
-    ret_val = 1;
-    *plot_color = pal_01[ pal_step ] << 4;
-    pal_step++;
-    if( pal_step >= pal_len ){pal_step = 0;}
+    // make symmetrical copy
+    *(angle)=start_angle;
+    *angle_delta      =  -1; *radius_delta   =  -1; // called after all points
+    mandala_draw();
+
+    
+    start_angle+=1;
+
+    //spiral2();
+    if( incr_sub_pal() ){ hires_clear();  }
+    //incr_sub_pal();
+    //hires_clear();
   }
-  return ret_val;
+      
 }
+
+
 
 int main ()
 {
@@ -330,13 +352,9 @@ int main ()
   
   while( 1 ) {
 
-    for(loops=0;loops<50;loops++)
-    {
-      *(angle)=0;
-      spiral2();
-      if( incr_sub_pal() ){ hires_clear();  }
-      //hires_clear();
-    }
+    bg_sweep();
+    
+    spiral2();
 
     
     for(loops=0;loops<50;loops++)
@@ -346,7 +364,8 @@ int main ()
       *radius = 60;    circle();
       *radius = 40;    circle();
       *angle = *angle+32;
-      if( incr_sub_pal() ){ hires_clear();  }
+      incr_sub_pal();
+      //if( incr_sub_pal() ){ hires_clear();  }
     }
     
     for(loops=0;loops<100;loops++)
